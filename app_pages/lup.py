@@ -89,9 +89,19 @@ def form_app():
             result1 = pd.DataFrame([{
                 "soc": gruppe["soc"].iloc[0],
                 "zelle": gruppe["zelle"].iloc[0],
-                "robust_start_end_median": robust_start_end_median(gruppe[plot]),
-                "div": gruppe[plot].iloc[:-3].median() - gruppe[plot].iloc[0],
-                "mean": gruppe[plot].mean(),
+                **(
+                    {
+                        "robust_start_end_median": robust_start_end_median(gruppe[plot]),
+                        "div": gruppe[plot].iloc[:-3].median() - gruppe[plot].iloc[0],
+                        "mean": gruppe[plot].mean(),
+                    }
+                    if (gruppe["cycle"] == 0).any()
+                    else {
+                        "robust_start_end_median": robust_start_end_median(pd.concat([inital_mean[plot],gruppe[plot]])),
+                        "div": gruppe[plot].iloc[:-3].median() - inital_mean[plot].iloc[0],
+                        "mean": pd.concat([gruppe[plot],inital_mean[plot]]).mean(),
+                    }
+                )
             } for gruppe in gruppen])
             st.write(result1)
     elif dia == 'Zyklen-mittel':
