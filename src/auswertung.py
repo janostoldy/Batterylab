@@ -22,7 +22,7 @@ def robust_start_end_median(df):
     med_start = df.iloc[0]
     med_end = df.iloc[-3:].median()
     delta_abs = med_end - med_start
-    delta_rel = abs(delta_abs / med_start)
+    delta_rel = delta_abs / abs(med_start)
     return delta_rel
 
 def robust_start_end_abw(df, tol=0.05):
@@ -40,8 +40,6 @@ def robust_start_end_abw(df, tol=0.05):
     return -1
 
 def normiere_kurve(gruppe):
-    last3 = gruppe.tail(3)['wert']
-    median = last3.median()
-    gruppe = gruppe.copy()
-    gruppe['wert_norm'] = gruppe['wert'] / median if median != 0 else gruppe['wert']
+    startwert = gruppe['wert'].iloc[0]
+    gruppe['wert'] = gruppe['wert'] / startwert
     return gruppe

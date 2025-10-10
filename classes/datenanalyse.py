@@ -141,11 +141,8 @@ class Analyse:
                     raise Exception("Keine Eis-Daten")
 
                 # Eis Messung
-                start_eis_indices = df[((df['flags'] == 37) | (df['flags'] == 165)) & (df['freqhz'] > 0)].index
-                end_eis_indices = df[((df['flags'] == 69) | (df['flags'] == 197)) & (df['freqhz'] > 0)].index
-                if len(start_eis_indices) == 0 or len(end_eis_indices) == 0:
-                    start_eis_indices = df[((df['flags'] == 53) | (df['flags'] == 181)) & (df['freqhz'] > 0)].index
-                    end_eis_indices = df[((df['flags'] == 85) | (df['flags'] == 213)) & (df['freqhz'] > 0)].index
+                start_eis_indices = df[((df['flags'] == 37) | (df['flags'] == 165) | (df['flags'] == 53) | (df['flags'] == 181)) & (df['freqhz'] > 0)].index
+                end_eis_indices = df[((df['flags'] == 69) | (df['flags'] == 197) | (df['flags'] == 85) | (df['flags'] == 213)) & (df['freqhz'] > 0)].index
                 if len(start_eis_indices) == 0 or len(end_eis_indices) == 0:
                     raise Exception('No EIS data found in file or wrong flags.')
 
@@ -415,7 +412,6 @@ class Analyse:
         if save_data:
             self.DB.insert_file(data_name, cycle, "Imp Untersuchung", Zelle, "imp")
             self.DB.df_in_DB(df=data, table_name='imp')
-
 
     def insert_data(self, eis_values, deis_values, data_name):
         for eis in eis_values:

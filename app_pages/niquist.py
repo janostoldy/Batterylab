@@ -393,7 +393,7 @@ def plot_soc_freq(df_long,agg_funcs):
     if sel2:
         df_para = df_long[df_long['parameter'] == sel3]
         df_freq= df_para[df_para['zelle'] == sel2]
-        cycle = [0, 5,20,40]
+        cycle = [0, 5,15,30,50]
         #soc = [500,1250,2000]
         df_sorted = df_freq[df_freq['cycle'].isin(cycle)]
         #df_sorted = df_freq[df_freq['soc'].isin(soc)]
@@ -535,6 +535,7 @@ def plot_tab_overall(df_long,df_eis,agg_funcs):
 
 def plot_tab_zelle(df_all):
     zellen_dict = {zelle: df for zelle, df in df_all.groupby('zelle')}
+    all_df = pd.DataFrame()
     for zelle in zellen_dict:
         st.subheader(zelle)
         zelle_df = zellen_dict[zelle]
@@ -570,6 +571,7 @@ def plot_tab_zelle(df_all):
         } for gruppe in gruppen])
         gruppen = [df for _, df in result1.groupby('parameter')]
         result2 = pd.DataFrame([{
+            "zelle": zelle,
             "parameter": gruppe["parameter"].iloc[0],
             "corections": gruppe["corections"].sum(),
             "gesamt_delta_mean": gruppe["robust_median"].mean(),
@@ -593,6 +595,26 @@ def plot_tab_zelle(df_all):
             file_name=f"Form_{zelle}.tex",
             mime="text/plain"
         )
+        all_df = pd.concat([all_df, result2])
+    wide = all_df.pivot_table(
+        index='parameter',
+        columns='zelle',
+        values='gesamt_delta_mean',
+        aggfunc='first'
+    ).sort_index()
+    wide = wide.drop(columns=['JT_VTC_001', 'JT_VTC_002'])
+    st.subheader("Zusammenfassung")
+    st.write(wide)
+
+    latex_table = wide.to_latex(index=False, escape=False, decimal=",")
+    st.download_button(
+        label="LaTeX-Tabelle herunterladen",
+        data=latex_table,
+        file_name=f"Form_Zellen.tex",
+        mime="text/plain"
+    )
+
+
 
 def plot_para_zelle(df_all):
     gruppen = []
@@ -624,8 +646,14 @@ def plot_para_zelle(df_all):
     for para in data_df['parameter'].unique():
         st.write(para)
         plot_df = data_df[data_df['parameter'] == para]
-        plot_df = plot_df.groupby('zelle', group_keys=False).apply(normiere_kurve)
-        fig = px.line(plot_df,
+        gruppen = [df for _, df in plot_df.groupby('zelle')]
+        norm_df = pd.DataFrame()
+        for gruppe in gruppen:
+            first = gruppe.iloc[0]['wert']
+            gruppe['wert_norm'] = gruppe['wert'] / first
+            norm_df = pd.concat([norm_df, gruppe])
+        norm_df = norm_df.sort_values('cycle')
+        fig = px.line(norm_df,
                       x="cycle",
                       y=wert,
                       color="zelle")
