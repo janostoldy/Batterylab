@@ -136,6 +136,19 @@ def form_app():
                 }
             )
         } for gruppe in gruppen])
+        st.subheader("Abweichung Zellen")
+        dat2 = result2[result2["ima"] == 2500]
+        dat2 = dat2[dat2["soc"] == 1250]
+        dat2.drop(columns=["ima","soc"], inplace=True)
+        dat2 = dat2.round(3)
+        st.write(dat2)
+        latex_table = dat2.to_latex(index=False, escape=False, decimal=",")
+        st.download_button(
+            label="LaTeX-Tabelle herunterladen",
+            data=latex_table,
+            file_name=f"Form_DEIS_Zellen.tex",
+            mime="text/plain"
+        )
 
         gruppen = [daf for _, daf in result2.groupby(['soc', 'ima'])]
         result3 = pd.DataFrame([{
@@ -146,12 +159,17 @@ def form_app():
             "abw_im": gruppe["abw_im"].mean(),
             "abw_abs": gruppe["abw_abs"].mean(),
         } for gruppe in gruppen])
-        st.subheader("Abweichung")
+        st.subheader("Abweichung alle")
         st.write(result3)
+        result3 = result3.round(3)
         result3 = result3.sort_values(by=['ima'])
-        if st.button("result.latex", use_container_width=True):
-            tec = result3.to_latex(index=False)
-            st.markdown(tec, unsafe_allow_html=True)
+        latex_table = result3.to_latex(index=False, escape=False, decimal=",")
+        st.download_button(
+            label="LaTeX-Tabelle herunterladen",
+            data=latex_table,
+            file_name=f"Form_DEIS.tex",
+            mime="text/plain"
+        )
         st.session_state["Abweichung"] = result3
     elif dia == 'Zyklen-mittel':
         data_df = df[df["cycle"] <= 50]
