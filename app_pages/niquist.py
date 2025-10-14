@@ -235,63 +235,60 @@ def niqhist_app():
 def form_app():
     st.title("Formierungs Analyse")
     DB = Database("form")
-    data = DB.get_form()
-    st.write(data)
-    if st.button("Werte Berechnen", type="primary") or True:
-        eis = DB.get_all_eis_data()
+    eis = DB.get_all_eis_data()
 
-        eis = eis.rename(columns={
-            "calc_rezohm": "re",
-            "calc_imzohm": "im",
-            "phasezdeg": "phase",
-            "zohm": "betrag"
-        })
-        eis["freqhz"] = eis["freqhz"].round(2)
-        df_eis = eis.melt(
-            id_vars=["freqhz", "soc", "zelle", "cycle"],
-            value_vars=["re", "im", "phase", "betrag"],
-            var_name="parameter",
-            value_name="wert"
-        )
+    eis = eis.rename(columns={
+        "calc_rezohm": "re",
+        "calc_imzohm": "im",
+        "phasezdeg": "phase",
+        "zohm": "betrag"
+    })
+    eis["freqhz"] = eis["freqhz"].round(2)
+    df_eis = eis.melt(
+        id_vars=["freqhz", "soc", "zelle", "cycle"],
+        value_vars=["re", "im", "phase", "betrag"],
+        var_name="parameter",
+        value_name="wert"
+    )
 
-        points = DB.get_all_eis_points()
-        wert_spalten = ['im_max', 're_min', 're_max', 'im_min', 'phase_max', 'phase_min', 'im_zif', 'phase_zif', 'mpd',
-                        'phase_184','phase_400','im_631', 'im_63','im_400','im_184','re_184', 're_400']
-        df_points = points.melt(
-            id_vars=['soc', 'zelle', 'cycle'],  # diese bleiben unverändert
-            #value_vars=wert_spalten,  # diese Spalten werden umgeformt
-            var_name='parameter',  # neue Spalte für den Parameternamen
-            value_name='wert'  # neue Spalte für den Wert
-        )
+    points = DB.get_all_eis_points()
+    wert_spalten = ['im_max', 're_min', 're_max', 'im_min', 'phase_max', 'phase_min', 'im_zif', 'phase_zif', 'mpd',
+                    'phase_184','phase_400','im_631', 'im_63','im_400','im_184','re_184', 're_400']
+    df_points = points.melt(
+        id_vars=['soc', 'zelle', 'cycle'],  # diese bleiben unverändert
+        #value_vars=wert_spalten,  # diese Spalten werden umgeformt
+        var_name='parameter',  # neue Spalte für den Parameternamen
+        value_name='wert'  # neue Spalte für den Wert
+    )
 
-        df_match_eis = df_eis.drop(columns=["freqhz"])
-        df_match_eis['parameter'] = df_eis['parameter'] + '_' + df_eis['freqhz'].astype(str)
-        exclude = ['phase_200','phase_400','im_631', 'im_63','im_400','im_200','re_200', 're_400']
-        df_match_points = df_points[~df_points['parameter'].isin(exclude)]
-        df_all = pd.concat([df_match_points, df_match_eis])
+    df_match_eis = df_eis.drop(columns=["freqhz"])
+    df_match_eis['parameter'] = df_eis['parameter'] + '_' + df_eis['freqhz'].astype(str)
+    exclude = ['phase_200','phase_400','im_631', 'im_63','im_400','im_200','re_200', 're_400']
+    df_match_points = df_points[~df_points['parameter'].isin(exclude)]
+    df_all = pd.concat([df_match_points, df_match_eis])
 
-        agg_funcs = {
-            'wert': ['mean', 'std', 'median', 'min', 'max', max_dev_to_median]
-        }
+    agg_funcs = {
+        'wert': ['mean', 'std', 'median', 'min', 'max', max_dev_to_median]
+    }
 
-        ops = ['soc_geo','overall_geo', 'tab overall','overall_freq','soc_freq', 'soc_overall','tab_zelle','plot_para_zelle']
-        sel1 = st.segmented_control("Plots wählen", options=ops, default=ops[0])
-        if sel1 == 'soc_geo':
-            plot_para_over_soc(df_points,agg_funcs)
-        elif sel1 == 'overall_geo':
-            plot_para_overall(df_points,agg_funcs)
-        elif sel1 == 'overall_freq':
-            plot_freq_overall(df_eis, agg_funcs)
-        elif sel1 == 'soc_freq':
-            plot_soc_freq(df_eis, agg_funcs)
-        elif sel1 == 'soc_overall':
-            plot_soc_overall(df_eis)
-        elif sel1 == 'tab_zelle':
-            plot_tab_zelle(df_match_points)
-        elif sel1 == 'plot_para_zelle':
-            plot_para_zelle(df_match_points)
-        else:
-            plot_tab_overall(df_points,df_match_eis,agg_funcs)
+    ops = ['soc_geo','overall_geo', 'tab overall','overall_freq','soc_freq', 'soc_overall','tab_zelle','plot_para_zelle']
+    sel1 = st.segmented_control("Plots wählen", options=ops, default=ops[0])
+    if sel1 == 'soc_geo':
+        plot_para_over_soc(df_points,agg_funcs)
+    elif sel1 == 'overall_geo':
+        plot_para_overall(df_points,agg_funcs)
+    elif sel1 == 'overall_freq':
+        plot_freq_overall(df_eis, agg_funcs)
+    elif sel1 == 'soc_freq':
+        plot_soc_freq(df_eis, agg_funcs)
+    elif sel1 == 'soc_overall':
+        plot_soc_overall(df_eis)
+    elif sel1 == 'tab_zelle':
+        plot_tab_zelle(df_match_points)
+    elif sel1 == 'plot_para_zelle':
+        plot_para_zelle(df_match_points)
+    else:
+        plot_tab_overall(df_points,df_match_eis,agg_funcs)
 
         #y: Abweichung, x: soc, plots für bestimte frequenzen z.B. phase 400hz
 
@@ -536,11 +533,14 @@ def plot_tab_overall(df_long,df_eis,agg_funcs):
 def plot_tab_zelle(df_all):
     zellen_dict = {zelle: df for zelle, df in df_all.groupby('zelle')}
     all_df = pd.DataFrame()
+    con1 = st.container()
     for zelle in zellen_dict:
-        st.subheader(zelle)
+        con1.subheader(zelle)
         zelle_df = zellen_dict[zelle]
         zelle_df = zelle_df.drop(columns=['zelle'])
         gruppen = []
+        #Filtern
+        zelle_df = zelle_df.sort_values(by=['cycle'])
         for _, gruppe in zelle_df.groupby(['soc', 'parameter']):
             werte = gruppe["wert"]
             q1 = werte.quantile(0.25)
@@ -556,16 +556,15 @@ def plot_tab_zelle(df_all):
             anzahl_entfernt = len(werte) - len(gruppe_clean)
             gruppe_clean = gruppe_clean.assign(korrekturen=anzahl_entfernt)
             gruppen.append(gruppe_clean)
-
         zelle_df = pd.concat(gruppen, ignore_index=True)
-
         gruppen = [df for _, df in zelle_df.groupby(['soc', 'parameter'])]
         result1 = pd.DataFrame([{
             "soc": gruppe["soc"].iloc[0],
             "parameter": gruppe["parameter"].iloc[0],
-            "corections": gruppe["korrekturen"].iloc[0],
+            #"corections": gruppe["korrekturen"].iloc[0],
             "robust_median": robust_start_end_median(gruppe["wert"]),
             "mean": gruppe["wert"].mean(),
+            "div": gruppe["wert"].iloc[-3:].median() - gruppe["wert"].iloc[0],
             "bis_median_0.05": robust_start_end_abw(gruppe,0.05),
             "bis_median_0.01": robust_start_end_abw(gruppe,0.01)
         } for gruppe in gruppen])
@@ -573,9 +572,12 @@ def plot_tab_zelle(df_all):
         result2 = pd.DataFrame([{
             "zelle": zelle,
             "parameter": gruppe["parameter"].iloc[0],
-            "corections": gruppe["corections"].sum(),
-            "gesamt_delta_mean": gruppe["robust_median"].mean(),
+            #"corections": gruppe["corections"].sum(),
+            "gesamt_delta_mean": gruppe[gruppe["soc"] == 1250]["robust_median"].iloc[0],
             "delta_soc": gruppe["mean"].max() - gruppe["mean"].min(),
+            "div_20": gruppe[gruppe["soc"] == 500]["div"].values[0] if not gruppe[gruppe["soc"] == 500].empty else None,
+            "div_50": gruppe[gruppe["soc"] == 1250]["div"].values[0] if not gruppe[gruppe["soc"] == 1250].empty else None,
+            "div_80": gruppe[gruppe["soc"] == 2000]["div"].values[0] if not gruppe[gruppe["soc"] == 2000].empty else None,
             "gesamt_bis_median_0.05_20SOC": gruppe[gruppe["soc"] == 500]["bis_median_0.05"].values[0] if not gruppe[gruppe["soc"] == 500].empty else None,
             "gesamt_bis_median_0.01_20SOC": gruppe[gruppe["soc"] == 500]["bis_median_0.01"].values[0] if not gruppe[gruppe["soc"] == 500].empty else None,
             "gesamt_bis_median_0.05_50SOC": gruppe[gruppe["soc"] == 1250]["bis_median_0.05"].values[0] if not gruppe[gruppe["soc"] == 1250].empty else None,
@@ -584,26 +586,33 @@ def plot_tab_zelle(df_all):
             "gesamt_bis_median_0.01_80SOC": gruppe[gruppe["soc"] == 2000]["bis_median_0.01"].values[0] if not gruppe[gruppe["soc"] == 2000].empty else None,
 
         } for gruppe in gruppen])
-
-        result2["gesamt_delta_mean"] = result2["gesamt_delta_mean"].apply(lambda x: float(f"{x:.3g}"))
-        result2 = result2.sort_values(by="gesamt_bis_median_0.01_50SOC", ascending=True)
-        st.write(result2)
+        #mask = ~result2["parameter"].str.contains("phase", case=False, na=False)
+        #result2.loc[mask, soc] = result2.loc[mask, soc].apply(lambda x: x * 1000)
+        #result2[soc] = result2[soc].apply(lambda x: float(f"{x:.3g}"))
+        con1.write(result2)
         latex_table = result2.to_latex(index=False, escape=False, decimal=",")
-        st.download_button(
+        con1.download_button(
             label="LaTeX-Tabelle herunterladen",
             data=latex_table,
             file_name=f"Form_{zelle}.tex",
             mime="text/plain"
         )
         all_df = pd.concat([all_df, result2])
+
+    st.subheader("Zusammenfassung")
+    soc = st.segmented_control("SOC_wählen",["div_20","div_50","div_80"],default="div_50")
     wide = all_df.pivot_table(
         index='parameter',
         columns='zelle',
-        values='gesamt_delta_mean',
+        values=soc,
         aggfunc='first'
     ).sort_index()
-    wide = wide.drop(columns=['JT_VTC_001', 'JT_VTC_002'])
-    st.subheader("Zusammenfassung")
+    if 'JT_VTC_001' in wide.columns:
+        wide = wide.drop(columns=['JT_VTC_001', 'JT_VTC_002'])
+    wide = wide.reset_index()
+    mask = ~wide["parameter"].str.contains("phase", case=False, na=False)
+    wide.loc[mask, wide.columns != "parameter"] = wide.loc[mask, wide.columns != "parameter"] * 1000
+    wide = wide.round(3)
     st.write(wide)
 
     latex_table = wide.to_latex(index=False, escape=False, decimal=",")
@@ -619,6 +628,7 @@ def plot_tab_zelle(df_all):
 def plot_para_zelle(df_all):
     gruppen = []
     # Filtert Extremwerte raus
+    df_all = df_all.sort_values(by=['cycle'])
     for _, gruppe in df_all.groupby(['zelle', 'soc', 'parameter']):
         werte = gruppe["wert"]
         q1 = werte.quantile(0.25)
@@ -640,7 +650,7 @@ def plot_para_zelle(df_all):
     soc = st.segmented_control("SOC auswählen", options=opt1, default=opt1[0])
     data_df = zelle_df[zelle_df["soc"] == soc]
 
-    opt2 = ["wert", "wert_norm"]
+    opt2 = ["wert", "wert_norm", 'div']
     wert = st.segmented_control("SOC auswählen", options=opt2, default=opt2[0])
 
     for para in data_df['parameter'].unique():
@@ -651,6 +661,7 @@ def plot_para_zelle(df_all):
         for gruppe in gruppen:
             first = gruppe.iloc[0]['wert']
             gruppe['wert_norm'] = gruppe['wert'] / first
+            gruppe['div'] = gruppe['wert'] - first
             norm_df = pd.concat([norm_df, gruppe])
         norm_df = norm_df.sort_values('cycle')
         fig = px.line(norm_df,
