@@ -27,8 +27,8 @@ Sie ermöglicht die interaktive Auswertung von Parametern, Zellen und Messwerten
 
 1. Repository klonen:
    ```bash
-   git clone https://github.com/<DEIN-NUTZERNAME>/<REPOSITORYNAME>.git
-   cd <REPOSITORYNAME>
+   git clone https://github.com/janostoldy/Batterylab
+   cd Batterylab
    ```
 
 2. Virtuelle Umgebung erstellen und aktivieren:
