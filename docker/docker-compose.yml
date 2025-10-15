@@ -3,7 +3,7 @@ services:
     image: postgres:17
     container_name: battery_db
     environment:
-      POSTGRES_PASSWORD: Schildkr0te
+      POSTGRES_PASSWORD: PASSWORD
       POSTGRES_DB: Battary_DB
     ports:
       - "5431:5432"
