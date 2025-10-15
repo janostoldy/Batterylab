@@ -64,7 +64,7 @@ Anschließend öffnet sich automatisch der Browser unter
     ├── biologic.py       # Ermöglicht schnelles darstellen von .mpr-Datein
     ├── db.py             # Daten zur Datenbank hinzugügen und bearbeiten
     ├── dva.py            # Zeigt DVA-Kurven
-    ├── ecd.py            # Bearbeiten von Ersatzschaltbildern (nicht fertig) 
+    ├── ecd.py            # Bearbeiten von Ersatzschaltbildern (nicht verwendet) 
     ├── home.py           # Homescreen
     ├── impedanz.py       # Vergleich von Basytech/Safion und Biologic-Daten
     ├── kapa.py           # Kapazitätsanalyse
@@ -73,7 +73,7 @@ Anschließend öffnet sich automatisch der Browser unter
     │                     # Parameter durch Formierung
     ├── niqhist.py        # Darstellung von Niquist und Bode-Diagrammen und Entwicklung von
     │                     # EIS-Parametern durch Formierung
-    ├── pruefung.py       # Darstellung von Eingangsprüfung (nicht fertig) 
+    ├── pruefung.py       # Darstellung von Eingangsprüfung (nicht verwendet) 
     ├── safion.py         # Ermöglicht schnelles darstellen von .csv-Datein des Safions
     └── zellen.py         # Hinzufügen von Zellen zur Datenbank
 ├── classes/              
