@@ -2,7 +2,7 @@ import plotly.express as px
 import streamlit as st
 import pandas as pd
 from src.filtern import daten_filter
-from src.plotting_functions import colors, download_button
+from src.plotting_functions import colors
 from classes.datenbank import Database
 
 def dva_app():
@@ -54,7 +54,6 @@ def dva_zellen_app():
                     space1, col1, col2 = con2.columns([1, 20, 3])
                     df_points = pd.DataFrame(points["value"].values.reshape(1, -1), columns=points["point"].values)
                     col1.dataframe(df_points, hide_index=True)
-                    download_button(col2,fig,key)
                     if tab:
                         con2.dataframe(data, hide_index=True)
                     key += 1
@@ -80,7 +79,6 @@ def dva_zellen_app():
                 con2.plotly_chart(fig)
                 space1, col1, col2 = con2.columns([1, 20, 3])
                 col1.dataframe(points, hide_index=True)
-                download_button(col2, fig, key)
                 if tab:
                     con2.dataframe(data, hide_index=True)
                 key += 1

@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from scipy.spatial import cKDTree
 from scipy.interpolate import griddata, interp1d
 from scipy.signal import savgol_filter
-from src.plotting_functions import colors_short, download_button
+from src.plotting_functions import colors_short
 
 def basytec_app():
     with st.sidebar:
@@ -364,7 +364,6 @@ def plot_typ(imp_data, x, y):
                       hover_data=['freq']
                       )
         con.plotly_chart(fig)
-        download_button(con, fig, z)
         con.write(data)
 
 def plot_c_rates(imp_data, x, y, c_rates, ):
@@ -384,7 +383,6 @@ def plot_c_rates(imp_data, x, y, c_rates, ):
                       hover_data=['freq']
                       )
         con.plotly_chart(fig)
-        download_button(con, fig, z)
         con.write(data)
 
 def plot_basy(data):

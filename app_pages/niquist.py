@@ -1,12 +1,11 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-import numpy as np
 from src.auswertung import max_dev_to_median, robust_start_end_median, robust_start_end_abw, normiere_kurve
 from classes.datenanalyse import Analyse
 from classes.datenbank import Database
 from src.filtern import daten_filter, soc_filer
-from src.plotting_functions import colors, download_button
+from src.plotting_functions import colors
 
 def eis_app():
     with st.sidebar:
@@ -115,7 +114,6 @@ def points_app():
             fig = plot_points(data_mod, name, x_values, y_values,subplots)
             con2.plotly_chart(fig)
             space, col2 = con2.columns([4, 1])
-            download_button(col2,fig,key)
             key += 1
 
             con2.dataframe(data_mod)
@@ -227,7 +225,6 @@ def niqhist_app():
             fig = plot_graphs(data_mod, name,subplots,x_data,y_data, log_x)
             con2.plotly_chart(fig)
             space, col2 = con2.columns([4, 1])
-            download_button(col2,fig,key)
             key += 1
             if tabels:
                 con2.dataframe(data_mod)

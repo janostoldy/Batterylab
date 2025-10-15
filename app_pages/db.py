@@ -139,7 +139,6 @@ def file_loeschen(files,DB):
 
 @st.dialog("Daten bearbeiten",width="large")
 def file_bearbeiten(files, DB):
-    st.write("Noch nicht fertig, ändert nur Files")
     alle_zellen = DB.get_all_zells()
     alle_typen = DB.get_file_typs()
     for index, row in files.iterrows():

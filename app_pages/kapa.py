@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import io
 from src.filtern import daten_filter
-from src.plotting_functions import colors, download_button
+from src.plotting_functions import colors
 from classes.datenbank import Database
 
 def kapazitaet_app():
@@ -79,8 +79,6 @@ def kapazitaet_app():
                     gridwidth=1
                 )
             )
-
-            download_button(con2, fig, key)
             key += 1
 
             con2.dataframe(data_mod)

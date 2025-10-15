@@ -55,6 +55,7 @@ def get_linestyles():
             })
     return combination_line, combimation_dot
 
+# Nicht mehr verwendet
 def download_button(col, fig, key):
     fig.update_layout(
         template="plotly",  # <- wichtig!

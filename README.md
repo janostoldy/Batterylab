@@ -61,6 +61,21 @@ Anschließend öffnet sich automatisch der Browser unter
 ```
 ├── app.py                # Hauptdatei der Streamlit-Anwendung
 ├── app_pages/            # Unterseiten der Streamlit-Anwendung
+    ├── biologic.py       # Ermöglicht schnelles darstellen von .mpr-Datein
+    ├── db.py             # Daten zur Datenbank hinzugügen und bearbeiten
+    ├── dva.py            # Zeigt DVA-Kurven
+    ├── ecd.py            # Bearbeiten von Ersatzschaltbildern (nicht fertig) 
+    ├── home.py           # Homescreen
+    ├── impedanz.py       # Vergleich von Basytech/Safion und Biologic-Daten
+    ├── kapa.py           # Kapazitätsanalyse
+    ├── lup.py            # Zeigt Look-Up-Tables zur Temperaturschätzung, 
+    │                     # Entwicklung der DEIS-Parameter und den Fehler dieser
+    │                     # Parameter durch Formierung
+    ├── niqhist.py        # Darstellung von Niquist und Bode-Diagrammen und Entwicklung von
+    │                     # EIS-Parametern durch Formierung
+    ├── pruefung.py       # Darstellung von Eingangsprüfung (nicht fertig) 
+    ├── safion.py         # Ermöglicht schnelles darstellen von .csv-Datein des Safions
+    └── zellen.py         # Hinzufügen von Zellen zur Datenbank
 ├── classes/              
     ├── datenanalyse.py   # Auswertung der Ergebnisse
     └── datenbank.py      # Komunikation mit Datenbank
