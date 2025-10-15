@@ -115,6 +115,6 @@ Anschließend öffnet sich automatisch der Browser unter
 
 ## 👤 Autor
 
-Entwickelt von **<DEIN NAME>**  
+Entwickelt von **<Janos Toldy>**  
 Maschinenbau – Technische Universität München  
 📍 München, Deutschland
