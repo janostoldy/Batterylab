@@ -620,8 +620,6 @@ def plot_tab_zelle(df_all):
         mime="text/plain"
     )
 
-
-
 def plot_para_zelle(df_all):
     gruppen = []
     # Filtert Extremwerte raus
