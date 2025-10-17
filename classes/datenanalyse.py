@@ -119,6 +119,12 @@ class Analyse:
                 'im_600': im.iloc[idx_631],
                 'im_57': im.iloc[idx_31],
                 'im_16': im.iloc[idx_16],
+                're_600': re.iloc[idx_631],
+                're_57': re.iloc[idx_31],
+                're_16': re.iloc[idx_16],
+                'phase_600': phase.iloc[idx_631],
+                'phase_57': phase.iloc[idx_31],
+                'phase_16': phase.iloc[idx_16],
                 'd_zi_min_re': re.iloc[minima_indices] - re.iloc[zif_indizes],
                 'd_zi_max_re': re.iloc[maxima_indices] - re.iloc[zif_indizes],
                 'datei': eis['datei'].values[0]
