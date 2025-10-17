@@ -86,10 +86,10 @@ class Analyse:
             zif_indizes = np.where(np.diff(np.sign(im)))[0]
             zif_indizes = zif_indizes[0]
 
-            idx_200 = nearest(freq, 200)
-            idx_400 = nearest(freq, 400)
-            idx_631 = nearest(freq, 631)
-            idx_31 = nearest(freq, 31)
+            idx_184 = nearest(freq, 200)
+            idx_376 = nearest(freq, 400)
+            idx600 = nearest(freq, 631)
+            idx_57 = nearest(freq, 31)
             idx_16 = nearest(freq, 16)
 
             mpd = mean_pairwise_abs_diff(eis['zohm'])
@@ -109,21 +109,21 @@ class Analyse:
                 're_zif': re.iloc[zif_indizes],
                 'phase_zif': phase.iloc[zif_indizes],
                 'freq_zif': freq.iloc[zif_indizes],
-                're_184': re.iloc[idx_200],
-                'im_184': im.iloc[idx_200],
-                'phase_184': phase.iloc[idx_200],
-                're_376': re.iloc[idx_400],
-                'im_376': im.iloc[idx_400],
-                'phase_376': phase.iloc[idx_400],
+                're_184': re.iloc[idx_184],
+                'im_184': im.iloc[idx_184],
+                'phase_184': phase.iloc[idx_184],
+                're_376': re.iloc[idx_376],
+                'im_376': im.iloc[idx_376],
+                'phase_376': phase.iloc[idx_376],
                 'mpd': mpd,
-                'im_600': im.iloc[idx_631],
-                'im_57': im.iloc[idx_31],
+                'im_600': im.iloc[idx600],
+                'im_57': im.iloc[idx_57],
                 'im_16': im.iloc[idx_16],
-                're_600': re.iloc[idx_631],
-                're_57': re.iloc[idx_31],
+                're_600': re.iloc[idx600],
+                're_57': re.iloc[idx_57],
                 're_16': re.iloc[idx_16],
-                'phase_600': phase.iloc[idx_631],
-                'phase_57': phase.iloc[idx_31],
+                'phase_600': phase.iloc[idx600],
+                'phase_57': phase.iloc[idx_57],
                 'phase_16': phase.iloc[idx_16],
                 'd_zi_min_re': re.iloc[minima_indices] - re.iloc[zif_indizes],
                 'd_zi_max_re': re.iloc[maxima_indices] - re.iloc[zif_indizes],

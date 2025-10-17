@@ -257,7 +257,6 @@ def form_app():
         var_name='parameter',  # neue Spalte für den Parameternamen
         value_name='wert'  # neue Spalte für den Wert
     )
-
     df_match_eis = df_eis.drop(columns=["freqhz"])
     df_match_eis['parameter'] = df_eis['parameter'] + '_' + df_eis['freqhz'].astype(str)
     exclude = ['phase_200','phase_400','im_631', 'im_63','im_400','im_200','re_200', 're_400']
@@ -270,6 +269,7 @@ def form_app():
 
     ops = ['soc_geo','overall_geo', 'tab overall','overall_freq','soc_freq', 'soc_overall','tab_zelle','plot_para_zelle']
     sel1 = st.segmented_control("Plots wählen", options=ops, default=ops[0])
+    df_match_points = df_match_points.dropna()
     if sel1 == 'soc_geo':
         plot_para_over_soc(df_points,agg_funcs)
     elif sel1 == 'overall_geo':
@@ -288,7 +288,6 @@ def form_app():
         plot_tab_overall(df_points,df_match_eis,agg_funcs)
 
         #y: Abweichung, x: soc, plots für bestimte frequenzen z.B. phase 400hz
-
 
 def plot_points(data, name,x_values, y_values, subplots):
     fig = px.line(data,
