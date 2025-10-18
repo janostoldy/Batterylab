@@ -419,85 +419,49 @@ def plot_soc_freq(df_long,agg_funcs):
         )
         st.plotly_chart(fig)
         st.write(df_eis)
-
-def plot_soc_overall(df_long):
-    zelle = df_long['zelle'].unique()
-    opt1 = [500,1250,2000]
-    soc = st.segmented_control("SOC auswählen", options=opt1, default=opt1[0])
-    #opt2 = [0, 5,20,40]
-    #cycle = st.segmented_control("Zyklus auswählen", options=opt2, default=opt2[0])
-    opt3 = ['re', 'im','phase','betrag']
-    sel3 = st.segmented_control("Wert auswählen", options=opt3, default=opt3[0])
-    if sel3:
-        df_para = df_long[df_long['parameter'] == sel3]
-        df_sorted = df_para[df_para['soc'] == soc]
-        cycle = [5, 40]
-        df_sorted = df_sorted[df_sorted['cycle'].isin(cycle)]
-        st.write(df_sorted)
-        fig = px.box(df_sorted,
-                     x="freqhz",
-                     y='wert',
-                     log_x=True,
-                     color="zelle",
-                     #color="soc",
-                     hover_data=["soc", "zelle"], )
-        st.plotly_chart(fig)
-        df_eis = df_sorted.groupby(['freqhz', 'zelle']).agg(
-        #df_eis=df_sorted.groupby(['freqhz', 'soc']).agg(
-            mittelwert=('wert', 'mean'),
-            div=('wert', lambda x: x.max() - x.min()),
-        ).reset_index()
-        opt2 = ['mittelwert','div']
-        sel4 = st.segmented_control("Wert auswählen", options=opt2, default=opt2[0])
-        fig = px.line(df_eis,
-                      x="freqhz",
-                      y=sel4,
-                      log_x=True,
-                      color="zelle"
-                      #color = "soc",
-        )
-        st.plotly_chart(fig)
-        st.write(df_eis)
-
-def plot_para_over_soc(df_long,agg_funcs):
-    # GroupBy nach Zelle, SoC und Parameter
-    df_agg = df_long.groupby(['zelle', 'soc', 'parameter']).agg(agg_funcs)
-
-    # Spaltennamen bereinigen
-    df_agg.columns = ['mittelwert', 'std', 'median', 'min', 'max', 'max_abw_median']
-
-    # Index zurücksetzen
-    df_agg = df_agg.reset_index()
-    df_agg['cv'] = df_agg['std'] / df_agg['mittelwert']
-
-    opt = ['cv', 'max_abw_median']
-    sel = st.segmented_control("Wert auswählen", options=opt)
-    for zelle_id in df_agg['zelle'].unique():
-        df_plot = df_agg[df_agg['zelle'] == zelle_id]
-        fig = plot_points(df_plot, zelle_id, "soc", sel, "parameter")
-        st.subheader(f"{zelle_id}")
-        st.plotly_chart(fig)
-        st.write(df_plot)
-
-def plot_para_overall(df_long,agg_funcs):
-    # GroupBy nach Zelle, SoC und Parameter
-    df_long = df_long[df_long['zelle'] != 'U_VTC5A_007']
-    df_agg = df_long.groupby(['parameter','soc']).agg(agg_funcs)
-
-    # Spaltennamen bereinigen
-    df_agg.columns = ['mittelwert', 'std', 'median', 'min', 'max', 'max_abw_median']
-
-    # Index zurücksetzen
-    df_agg = df_agg.reset_index()
-    df_agg['cv'] = df_agg['std'] / df_agg['mittelwert']
-
-    opt = ['cv', 'max_abw_median']
-    sel = st.segmented_control("Wert auswählen", options=opt, default=opt[0])
-
-    fig = plot_points(df_agg, "Overall", "soc", sel, "parameter")
-    st.subheader("Overall")
-    st.plotly_chart(fig)
-    st.write(df_agg)
+        st.subheader("Differenz der Werte")
+        if sel3 == 're':
+            st.write("bei 5,4Hz")
+            data = df_eis[df_eis['freqhz'].between(5, 6)]
+            data.sort_values(by='cycle', inplace=True)
+            st.write(data)
+            res1 = pd.DataFrame([{
+                "Zyklen": "0-5",
+                "Start": data["std"].iloc[0]*1000,
+                "Ende":  data["std"].iloc[1]*1000,
+                "Diff": data["std"].iloc[1]*1000 - data["std"].iloc[0]*1000,
+                "Diff/Zyklus": (data["std"].iloc[1] * 1000 - data["std"].iloc[0] * 1000)/5,
+                "Diff/Zyklus in %": (data["std"].iloc[1] - data["std"].iloc[0]) / data["std"].iloc[0] / 5 * 100,
+            }])
+            res2 = pd.DataFrame([{
+                "Zyklen": "30-50",
+                "Start": data["std"].iloc[3] * 1000,
+                "Ende": data["std"].iloc[4] * 1000,
+                "Diff": data["std"].iloc[4] * 1000 - data["std"].iloc[3] * 1000,
+                "Diff/Zyklus": (data["std"].iloc[4] * 1000 - data["std"].iloc[3] * 1000) / 20,
+                "Diff/Zyklus in %": (data["std"].iloc[4] - data["std"].iloc[3]) / data["std"].iloc[3] / 20 * 100,
+            }])
+            st.write(pd.concat([res1,res2]))
+        elif sel3 == 'im':
+            st.write("bei 56Hz")
+            data = df_eis[df_eis['freqhz'].between(56, 57)]
+            res1 = pd.DataFrame([{
+                "Zyklen": "0-5",
+                "Start": data["std"].iloc[0]*1000,
+                "Ende":  data["std"].iloc[1]*1000,
+                "Diff": data["std"].iloc[1]*1000 - data["std"].iloc[0]*1000,
+                "Diff/Zyklus": (data["std"].iloc[1] * 1000 - data["std"].iloc[0] * 1000)/5,
+                "Diff/Zyklus in %": (data["std"].iloc[1] - data["std"].iloc[0]) / data["std"].iloc[0] / 5 * 100,
+            }])
+            res2 = pd.DataFrame([{
+                "Zyklen": "30-50",
+                "Start": data["std"].iloc[3] * 1000,
+                "Ende": data["std"].iloc[4] * 1000,
+                "Diff": data["std"].iloc[4] * 1000 - data["std"].iloc[3] * 1000,
+                "Diff/Zyklus": (data["std"].iloc[4] * 1000 - data["std"].iloc[3] * 1000) / 20,
+                "Diff/Zyklus in %": (data["std"].iloc[4] - data["std"].iloc[3]) / data["std"].iloc[3] / 20 * 100,
+            }])
+            st.write(pd.concat([res1,res2]))
 
 def plot_tab_overall(df_long,df_eis,agg_funcs):
     df_overall = df_eis.groupby(['parameter']).agg(agg_funcs)
