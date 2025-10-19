@@ -267,23 +267,19 @@ def form_app():
         'wert': ['mean', 'std', 'median', 'min', 'max', max_dev_to_median]
     }
 
-    ops = ['soc_geo','overall_geo', 'tab overall','overall_freq','soc_freq', 'soc_overall','tab_zelle','plot_para_zelle']
+    ops = ['overall_freq','std_soc_freq','tab_zelle','plot_para_zelle','div_soc_cycle']
     sel1 = st.segmented_control("Plots wählen", options=ops, default=ops[0])
     df_match_points = df_match_points.dropna()
-    if sel1 == 'soc_geo':
-        plot_para_over_soc(df_points,agg_funcs)
-    elif sel1 == 'overall_geo':
-        plot_para_overall(df_points,agg_funcs)
-    elif sel1 == 'overall_freq':
+    if sel1 == 'overall_freq':
         plot_freq_overall(df_eis, agg_funcs)
-    elif sel1 == 'soc_freq':
+    elif sel1 == 'std_soc_freq':
         plot_soc_freq(df_eis, agg_funcs)
-    elif sel1 == 'soc_overall':
-        plot_soc_overall(df_eis)
     elif sel1 == 'tab_zelle':
-        plot_tab_zelle(df_match_points)
+        plot_tab_zelle(df_points)
     elif sel1 == 'plot_para_zelle':
-        plot_para_zelle(df_match_points)
+        plot_para_zelle(df_points)
+    elif sel1 == 'div_soc_cycle':
+        div_soc_cycle(df_points)
     else:
         plot_tab_overall(df_points,df_match_eis,agg_funcs)
 
@@ -318,38 +314,6 @@ def plot_graphs(data, name, subplots, x, y, log):
                   )
 
     return fig
-
-def plot_freq_over_soc(df_long,agg_funcs):
-    # GroupBy nach Zelle, SoC und Parameter
-    df_agg = df_long.groupby(['zelle', 'soc', 'parameter']).agg(agg_funcs)
-    df_overall = df_long.groupby(['zelle', 'parameter']).agg(agg_funcs)
-    # Spaltennamen bereinigen
-    df_agg.columns = ['mittelwert', 'std', 'median', 'min', 'max', 'max_abw_median']
-    df_overall.columns = ['mittelwert', 'std', 'median', 'min', 'max', 'max_abw_median']
-
-    # Index zurücksetzen
-    df_agg = df_agg.reset_index()
-    df_agg['cv'] = df_agg['std'] / df_agg['mittelwert']
-
-    df_overall = df_overall.reset_index()
-    df_overall['cv'] = abs(df_overall['std'] / df_overall['mittelwert'])
-
-    opt = ['cv', 'max_abw_median']
-    sel = st.segmented_control("Wert auswählen", options=opt)
-    df_min= (
-        df_overall.sort_values(sel, ascending=True)
-        .groupby('zelle')
-        .head(10)
-    )
-
-    for zelle_id in df_agg['zelle'].unique():
-        df_plot = df_agg[df_agg['zelle'] == zelle_id]
-        paras = df_min[df_min['zelle'] == zelle_id]
-        df_plot = df_plot[df_plot['parameter'].isin(paras['parameter'])]
-        fig = plot_points(df_plot, zelle_id, "soc", sel, "parameter")
-        st.subheader(f"{zelle_id}")
-        st.plotly_chart(fig)
-        st.write(paras)
 
 def plot_freq_overall(df_long,agg_funcs):
     # Gruppieren nach Frequenz und Parameter (soc und cycle fallen weg)
@@ -544,7 +508,6 @@ def plot_tab_zelle(df_all):
             "gesamt_bis_median_0.01_50SOC": gruppe[gruppe["soc"] == 1250]["bis_median_0.01"].values[0] if not gruppe[gruppe["soc"] == 1250].empty else None,
             "gesamt_bis_median_0.05_80SOC": gruppe[gruppe["soc"] == 2000]["bis_median_0.05"].values[0] if not gruppe[gruppe["soc"] == 2000].empty else None,
             "gesamt_bis_median_0.01_80SOC": gruppe[gruppe["soc"] == 2000]["bis_median_0.01"].values[0] if not gruppe[gruppe["soc"] == 2000].empty else None,
-
         } for gruppe in gruppen])
         #mask = ~result2["parameter"].str.contains("phase", case=False, na=False)
         #result2.loc[mask, soc] = result2.loc[mask, soc].apply(lambda x: x * 1000)
@@ -629,3 +592,37 @@ def plot_para_zelle(df_all):
         if wert == "wert_norm":
             fig.update_yaxes(range=[0.5, 1.5])
         st.plotly_chart(fig)
+
+def div_soc_cycle(df_all):
+    gruppen = []
+    # Filtert Extremwerte raus
+    df_all = df_all.sort_values(by=['cycle'])
+
+    soc = [500, 1250, 2000]
+    data_df = df_all[df_all["soc"].isin(soc)]
+    opt1 = data_df['zelle'].unique()
+    zelle = st.segmented_control("Zelle wählen", options=opt1, default=opt1[0])
+    data_df = data_df[data_df["zelle"] == zelle]
+    opt2 = ["wert", "wert_norm", 'div']
+    wert = st.segmented_control("SOC auswählen", options=opt2, default=opt2[0])
+
+    for para in data_df['parameter'].unique():
+        st.write(para)
+        plot_df = data_df[data_df['parameter'] == para]
+        gruppen = [df for _, df in plot_df.groupby('soc')]
+        norm_df = pd.DataFrame()
+        for gruppe in gruppen:
+            first = gruppe.iloc[0]['wert']
+            gruppe['wert_norm'] = gruppe['wert'] / first
+            gruppe['div'] = gruppe['wert'] - first
+            norm_df = pd.concat([norm_df, gruppe])
+        norm_df = norm_df.sort_values('cycle')
+        fig = px.line(norm_df,
+                      x="cycle",
+                      y=wert,
+                      color="soc")
+        if wert == "wert_norm":
+            fig.update_yaxes(range=[0.5, 1.5])
+        st.plotly_chart(fig)
+        st.write(norm_df)
+    gruppen = []

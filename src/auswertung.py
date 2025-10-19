@@ -25,6 +25,18 @@ def robust_start_end_median(df):
     delta_rel = delta_abs / abs(med_start)
     return delta_rel
 
+def robust_start_end_theo_median(df,zelle):
+    med_start = df.iloc[0]
+    if zelle in ['JT_VTC_003', 'JT_VTC_006', 'JT_VTC_010']:
+        med_end = df.iloc[7:9].median()
+    elif zelle in ['JT_VTC_004', 'JT_VTC_007', 'JT_VTC_009']:
+        med_end = df.iloc[6:8].median()
+    else:
+        med_end = df.iloc[5:7].median()
+    delta_abs = med_end - med_start
+    delta_rel = delta_abs / abs(med_start)
+    return delta_rel
+
 def robust_start_end_abw(df, tol=0.05):
     if "wert" in df.columns:
         werte = df["wert"]
