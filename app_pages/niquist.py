@@ -458,6 +458,12 @@ def plot_tab_zelle(df_all):
     zellen_dict = {zelle: df for zelle, df in df_all.groupby('zelle')}
     all_df = pd.DataFrame()
     con1 = st.container()
+    initaldf = df_all[df_all['cycle']==0]
+    inital = (
+        initaldf
+        .groupby(['soc', 'parameter'], as_index=False)['wert']
+        .mean()
+    )
     for zelle in zellen_dict:
         con1.subheader(zelle)
         zelle_df = zellen_dict[zelle]

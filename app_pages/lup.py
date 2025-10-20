@@ -105,6 +105,7 @@ def form_app():
                             x=x_val,
                             y=plot,
                             color='zelle',
+                           hover_data=['cycle', 'theo_cycle'],
                             )
             st.plotly_chart(fig)
             gruppen = [daf for _, daf in data_df.groupby(['soc','zelle'])]
