@@ -238,9 +238,11 @@ class Database:
     def get_all_eis_points(self):
         conn = st.connection("sql", type="sql")
         sql = """SELECT eis_points.im_min, eis_points.im_max, eis_points.re_min, eis_points.re_max, eis_points.phase_max, eis_points.phase_min,
-                        eis_points.re_zif, eis_points.mpd, eis_points.phase_184, eis_points.phase_376, eis_points.im_57,
-                        eis_points.im_600, eis_points.im_376, eis_points.im_184, eis_points.re_376, eis_points.re_184,
-                        eis_points.im_16, eis_points.d_zi_max_re, eis_points.d_zi_min_re,
+                        eis_points.re_zif, eis_points.mpd, eis_points.d_zi_max_re, eis_points.d_zi_min_re,
+                        eis_points.phase_16, eis_points.phase_57, eis_points.phase_184, eis_points.phase_376, eis_points.phase_600,
+                        eis_points.im_16, eis_points.im_57, eis_points.im_184, eis_points.im_376, eis_points.im_600,
+                        eis_points.re_16,eis_points.re_57, eis_points.re_184, eis_points.re_376, eis_points.re_600,
+                        
                         eis_points.soc, files.zelle, files.cycle
                  FROM eis_points INNER JOIN files ON eis_points.datei = files.name"""
         return conn.query(sql)

@@ -7,7 +7,7 @@ from classes.datenbank import Database
 import plotly.graph_objects as go
 from scipy.optimize import root, curve_fit
 
-from src.auswertung import robust_start_end_median
+from src.auswertung import robust_start_end_median, robust_start_end_theo_median
 
 
 def lup_app():
@@ -56,8 +56,20 @@ def form_app():
     DB = Database("lup")
     df = DB.get_deis()
     df['calc_soc'] = df['soc']/2500
+    df['theo_cycle'] = np.select(
+        [
+            df['zelle'].isin(['JT_VTC_003', 'JT_VTC_006', 'JT_VTC_010']),
+            df['zelle'].isin(['JT_VTC_004', 'JT_VTC_007', 'JT_VTC_009'])
+        ],
+        [
+            df['cycle'] * 0.6,
+            df['cycle'] * 0.8
+        ],
+        default=df['cycle']
+    )
     plots = ['phasezdeg', 'calc_rezohm', 'calc_imzohm','zohm']
     df = df.sort_values(["zelle","soc","calc_ima","cycle"])
+
     st.write(df)
     data_df = df[df[("zelle")]==('JT_VTC_008')]
     data_df = data_df[data_df["calc_ima"]==1250]
@@ -74,8 +86,10 @@ def form_app():
             st.plotly_chart(fig)
     elif dia == 'Zyklen':
         socs = [0.2,0.5,0.8]
-        data_df = df[df["calc_ima"]==1250]
+        data_df = df[df["calc_ima"]==2500]
         soc = st.segmented_control("SOC wählen", socs, default=socs[0])
+        x_tog = st.toggle("Theoretische Zyklenzahl")
+        x_val = 'cycle' if not x_tog else 'theo_cycle'
         data_df = data_df[data_df["calc_soc"]== soc]
         data_df = data_df.sort_values(["zelle","soc","cycle"])
         inital = data_df[data_df["cycle"]==0]
@@ -88,9 +102,10 @@ def form_app():
         for plot in plots:
             st.subheader(plot + ' 200 Hz')
             fig = px.line(data_df,
-                            x='cycle',
+                            x=x_val,
                             y=plot,
                             color='zelle',
+                           hover_data=['cycle', 'theo_cycle'],
                             )
             st.plotly_chart(fig)
             gruppen = [daf for _, daf in data_df.groupby(['soc','zelle'])]
@@ -100,12 +115,14 @@ def form_app():
                 **(
                     {
                         "robust_start_end_median": robust_start_end_median(gruppe[plot]),
+                        "robust_start_theo_median": robust_start_end_theo_median(gruppe[plot],gruppe["zelle"].iloc[0]),
                         "div": gruppe[plot].iloc[:-3].median() - gruppe[plot].iloc[0],
                         "mean": gruppe[plot].mean(),
                     }
                     if (gruppe["cycle"] == 0).any()
                     else {
                         "robust_start_end_median": robust_start_end_median(pd.concat([inital_mean[plot],gruppe[plot]])),
+                        "robust_start_theo_median": robust_start_end_theo_median(pd.concat([inital_mean[plot], gruppe[plot]]),gruppe["zelle"].iloc[0]),
                         "div": gruppe[plot].iloc[:-3].median() - inital_mean[plot].iloc[0],
                         "mean": pd.concat([gruppe[plot],inital_mean[plot]]).mean(),
                     }
@@ -126,6 +143,10 @@ def form_app():
                     "abw_re": robust_start_end_median(gruppe["calc_rezohm"]),
                     "abw_im": robust_start_end_median(gruppe["calc_imzohm"]),
                     "abw_abs": robust_start_end_median(gruppe["zohm"]),
+                    "abw_phase_theo": robust_start_end_theo_median(gruppe["phasezdeg"], gruppe["zelle"].iloc[0]),
+                    "abw_re_theo": robust_start_end_theo_median(gruppe["calc_rezohm"], gruppe["zelle"].iloc[0]),
+                    "abw_im_theo": robust_start_end_theo_median(gruppe["calc_imzohm"], gruppe["zelle"].iloc[0]),
+                    "abw_abs_theo": robust_start_end_theo_median(gruppe["zohm"], gruppe["zelle"].iloc[0]),
                 }
                 if (gruppe["cycle"] == 0).any()
                 else {
@@ -133,6 +154,10 @@ def form_app():
                     "abw_re": robust_start_end_median(pd.concat([inital_mean["calc_rezohm"], gruppe["calc_rezohm"]])),
                     "abw_im": robust_start_end_median(pd.concat([inital_mean["calc_imzohm"], gruppe["calc_imzohm"]])),
                     "abw_abs": robust_start_end_median(pd.concat([inital_mean["zohm"], gruppe["zohm"]])),
+                    "abw_phase_theo": robust_start_end_theo_median(pd.concat([inital_mean["phasezdeg"], gruppe["phasezdeg"]]), gruppe["zelle"].iloc[0]),
+                    "abw_re_theo": robust_start_end_theo_median(pd.concat([inital_mean["calc_rezohm"], gruppe["calc_rezohm"]]), gruppe["zelle"].iloc[0]),
+                    "abw_im_theo": robust_start_end_theo_median(pd.concat([inital_mean["calc_imzohm"], gruppe["calc_imzohm"]]), gruppe["zelle"].iloc[0]),
+                    "abw_abs_theo": robust_start_end_theo_median(pd.concat([inital_mean["zohm"], gruppe["zohm"]]), gruppe["zelle"].iloc[0]),
                 }
             )
         } for gruppe in gruppen])
@@ -212,8 +237,14 @@ def fit_app():
 
     unique_ima = df["calc_ima"].unique()
     data_df = df[df["freqhz"].between(195, 205)]
-    socs = [0.2, 0.5, 0.8]
-    data_df = data_df[data_df["calc_soc"].isin(socs)]
+    gruppen = [df for _, df in data_df.groupby('temperaturec')]
+    mean = pd.DataFrame([{
+        "temperaturec": gruppe["temperaturec"].iloc[0],
+        "phasezdeg": gruppe["phasezdeg"].mean(),
+        "calc_rezohm": gruppe["calc_rezohm"].mean(),
+        "calc_imzohm":gruppe["calc_imzohm"].mean(),
+        "zohm": gruppe["zohm"].mean(),
+    } for gruppe in gruppen])
     plots = ['abw_phase', 'abw_re', 'abw_im','abw_abs']
     pl1 = st.segmented_control('Daten wählen', plots, default=plots[0])
     match pl1:
@@ -231,11 +262,12 @@ def fit_app():
     if "Abweichung" in st.session_state:
         state = st.session_state["Abweichung"]
         state = state[state["ima"]==ima]
-        st.write(state)
         abw_2 = state[state['soc'] == 500][pl1].values[0] if not state[state['soc'] == 500].empty else 0
         abw_5 = state[state['soc'] == 1250][pl1].values[0] if not state[state['soc'] == 500].empty else 0
         abw_8 =  state[state['soc'] == 2000][pl1].values[0] if not state[state['soc'] == 500].empty else 0
-
+    else:
+        st.error("Abweichung nicht gefund! --> Erst Seite Formierung öffnen")
+        st.stop()
     col1.write("Delta 0.2 SOC")
     div_2 = coln2.number_input("0.2",label_visibility="collapsed",value=abw_2)
     col1, coln2, soc5 = con1.columns(3)
@@ -244,13 +276,20 @@ def fit_app():
     col1, coln2, soc8 = con1.columns(3)
     col1.write("Delta 0.8 SOC")
     div_8 = coln2.number_input("0.8",label_visibility="collapsed",value=abw_8)
+    col1, colmean = con1.columns([1,3])
+    col1.write("Abweichung ohne SOC-Input")
     fig = go.Figure()
     fits = pd.DataFrame()
+    socs = [0.2, 0.5, 0.8,'mean']
     for soc in socs:
-        dat = data_df[data_df["calc_soc"]== soc]
-        dat = dat[dat["calc_ima"] == ima]
-        x = dat['temperaturec']
-        y = dat[pl]
+        if soc == 'mean':
+            x = mean['temperaturec']
+            y = mean[pl]
+        else:
+            dat = data_df[data_df["calc_soc"]== soc]
+            dat = dat[dat["calc_ima"] == ima]
+            x =  dat['temperaturec']
+            y =  dat[pl]
         def func(x, a, b,c):
             return a * np.exp( b * x) + c
 
@@ -290,6 +329,13 @@ def fit_app():
             case 0.8:
                 wert = inital - inv_x((1+div_8) * y_fit[0], a, b, c)
                 soc8.write(f'Abweichung {wert} Grad')
+            case 'mean':
+                wert2 = inital - inv_x((1+div_2) * y_fit[0], a, b, c)
+                wert5 = inital - inv_x((1 + div_5) * y_fit[0], a, b, c)
+                wert8 = inital - inv_x((1 + div_8) * y_fit[0], a, b, c)
+                colmean.write(f'Abweichung 20% --> {wert2} Grad \n')
+                colmean.write(f'Abweichung 50% -->  {wert5} Grad \n')
+                colmean.write(f'Abweichung 80% --> {wert8} Grad \n')
 
     st.plotly_chart(fig)
     show_data = data_df[[
