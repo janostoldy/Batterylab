@@ -2,7 +2,7 @@ import pandas as pd
 
 # === Einstellungen ===
 datei = "bode_form.csv"                # Pfad zur CSV-Datei
-spalten = ["wert","div"]  # Spaltennamen, die *1000 genommen werden sollen
+spalten = ["calc_rezohm","calc_imzohm","zohm"]  # Spaltennamen, die *1000 genommen werden sollen
 ausgabe_datei = "bode_form_milliohm.csv"        # Name der Ausgabedatei
 
 # === CSV einlesen ===

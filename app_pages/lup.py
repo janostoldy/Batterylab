@@ -19,7 +19,7 @@ def lup_app():
     if side == "Table":
         table_app()
     elif side == "Formierung":
-        form_app()
+        deis_form_app()
     else:
         fit_app()
 
@@ -51,7 +51,7 @@ def table_app():
     show_data.sort_values(["temperaturec_cat","calc_soc"])
     st.write(show_data)
 
-def form_app():
+def deis_form_app():
     st.title("Formierungs Data")
     DB = Database("lup")
     df = DB.get_deis()

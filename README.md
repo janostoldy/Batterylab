@@ -108,13 +108,40 @@ Anschließend öffnet sich automatisch der Browser unter
 
 ---
 
-## 🧾 Lizenz
+## 🧾 Darstellungen in der Arbeit
+
+#### Preprocessing
+- Verarbeitung der Daten --> [datenanalyse.py](classes/datenanalyse.py)
+- Schreiben und Lesen aus Datenbank --> [datenbank.py](classes/datenbank.py)
+#### Postprocessing und Darstellung
+- Abbildung 2.9: [niqhist_app()](app_pages/niquist.py)
+- Abbildung 2.10: [niqhist_app()](app_pages/niquist.py)
+- Abbildung 4.1: [niqhist_app()](app_pages/niquist.py)
+- Abbildung 4.2: [niqhist_app()](app_pages/niquist.py)
+- Abbildung 4.3: [niqhist_app()](app_pages/niquist.py)
+- Abbildung 4.4: [form_app() --> div_soc_cycle(...)](app_pages/niquist.py)
+- Abbildung 4.5: [form_app() --> plot_soc_freq(...)](app_pages/niquist.py)
+- Abbildung 4.6: Daten aus [form_app() --> plot_tab_zelle(...)](app_pages/niquist.py)
+- Tabelle 4.2:  [form_app() --> plot_tab_zelle(...)](app_pages/niquist.py)
+- Tabelle 4.3:  [form_app() --> plot_tab_zelle(...)](app_pages/niquist.py)
+- Abbildung 4.7: [lup_app() --> deis_form_app()](app_pages/lup.py) --> Diagramme: SOC
+- Tabelle 4.4: [lup_app() --> deis_form_app()](app_pages/lup.py) --> Diagramme: Zyklen
+- Tabelle 4.5: [lup_app() --> deis_form_app()](app_pages/lup.py) --> Diagramme: Zyklen
+- Abbildung 4.8: [kapazitaet_app](app_pages/kapa.py)
+- Abbildung 4.9: [kapazitaet_app](app_pages/kapa.py)
+- Abbildung 4.10: [lup_app() --> fit_app](app_pages/lup.py)
+- Tabelle 4.5: [lup_app() --> fit_app](app_pages/lup.py)
+- Tabelle 4.5: [lup_app() --> fit_app](app_pages/lup.py)
+- Abbildung 4.11: [lup_app() --> fit_app](app_pages/lup.py)
+- Abbildung 4.12: [basytec_app --> berechnen_app](app_pages/impedanz.py)
+- Abbildung 4.13: [basytec_app --> berechnen_app](app_pages/impedanz.py)
+- Abbildung 4.14: Manuell über [safion_app()](app_pages/safion.py) und [biologic_app() --> allgemein_app()](app_pages/biologic.py)
 
 
 ---
 
 ## 👤 Autor
 
-Entwickelt von **<janostoldy>**  
+Entwickelt von **janostoldy**  
 Maschinenbau – Technische Universität München  
 📍 München, Deutschland
