@@ -51,6 +51,7 @@ streamlit run app.py
 
 Anschließend öffnet sich automatisch der Browser unter  
 👉 **http://localhost:8501**
+
 ---
 
 ## ⚙️ Installation (WebApp und Datenbank)
