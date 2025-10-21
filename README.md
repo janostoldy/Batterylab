@@ -23,7 +23,7 @@ Sie ermöglicht die interaktive Auswertung von Parametern, Zellen und Messwerten
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Installation (Nur WebApp)
 
 1. Repository klonen:
    ```bash
@@ -42,10 +42,8 @@ Sie ermöglicht die interaktive Auswertung von Parametern, Zellen und Messwerten
    ```bash
    pip install -r requirements.txt
    ```
-
 ---
-
-## ▶️ Anwendung starten
+## ▶️ Anwendung starten (Nur WebApp)
 
 ```bash
 streamlit run app.py
@@ -53,6 +51,38 @@ streamlit run app.py
 
 Anschließend öffnet sich automatisch der Browser unter  
 👉 **http://localhost:8501**
+---
+
+## ⚙️ Installation (WebApp und Datenbank)
+1. [Dockerdateien](docker) in Project-Ordner speichern ([Dockerfile](docker/Dockerfile) und [docker-compose.yml](docker/docker-compose.yml))
+2. Credentials in [docker-compose.yml](docker/docker-compose.yml) anpassen
+3. Container starten --> Erstellt Datebank und läde WebApp herunter:
+    ```bash
+       docker compose up -d
+    ```
+4. ```.dump```-Datei in Datenbank einfügen:
+5. App mit Datenbank verbinden:
+```.streamlit/secrets.toml``` im Verzeichnis erstellen und Verbindungsdetails 
+mit Credentials einfügen:
+   ```toml
+   [connections.sql]
+       host="localhost"
+       port=5431
+       url = "postgresql://postgres:<passwort>@localhost:5431/battery_db"
+       username="postgres"
+       passwort= "<passwort>"
+   ```
+6. Container neustarten
+    ```bash
+      docker compose restart
+    ```
+   
+### Infos
+
+- Die Konfiguration kann verwendet werden, um nur die Datenbank in Docker auszuführen.
+- Die WebApp kann anschließend separat gestartet werden (siehe [Anleitung](#-installation-nur-webapp)).
+- Entferne dazu den Abschnitt ```battery_app``` aus der Datei [docker-compose.yml](docker/docker-compose.yml).
+- In diesem Fall läuft die WebApp über die Projektdateien, in denen direkt Änderungen vorgenommen werden können.
 
 ---
 

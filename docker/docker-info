@@ -2,7 +2,7 @@
 cd batterylab
 docker compose up -d
 docker compose build --no-cache battery_app
-docker exec -it BatteryLab bash
+docker exec -it battery_db bash
     #Im Container
     psql -U postgres -d Battary_DB
         #In Datenbank
@@ -16,6 +16,7 @@ docker exec -it BatteryLab bash
 #Backup
     pg_dump -U postgres -d Battery_DB -F c -f /var/lib/postgresql/data/battary_db_backup.dump
 docker cp BatteryLab:/var/lib/postgresql/data/battary_db_backup.dump .
+#oder
 docker exec -i battery_db psql -U postgres -d Battery_DB /backups/battary_db_backup.dump
 
 

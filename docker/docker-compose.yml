@@ -4,7 +4,7 @@ services:
     container_name: battery_db
     environment:
       POSTGRES_PASSWORD: PASSWORD
-      POSTGRES_DB: Battary_DB
+      POSTGRES_DB: battery_db
     ports:
       - "5431:5432"
     volumes:

@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN git clone https://github.com/janostoldy/ba_app.git .
+RUN git clone https://github.com/janostoldy/Batterylab .
 
 COPY secrets.toml /batteryapp/.streamlit/
 
