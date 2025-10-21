@@ -135,6 +135,7 @@ mit Credentials einfügen:
 - [numpy](https://numpy.org/) – numerische Berechnungen  
 - [plotly](https://plotly.com/python/) – Diagramme  
 - [scipy](https://scipy.org) - Datenauswertung
+- [sqlalchemy](https://www.sqlalchemy.org) - Datenbankverwaltung
 - [galvani](https://github.com/echemdata/galvani) - Import von ```.mpr```-Datein
 
 ---
