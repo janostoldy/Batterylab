@@ -21,10 +21,13 @@ def eis_app():
         form_app()
 
 def points_app():
+    # Darstellung der Entwicklung von Impedanzmerkmalen
     st.title("Points")
+    # Objekt der Klasse Datenbank erstellen und Filenamen abrufen
     DB = Database("Points")
     alldata = DB.get_all_eis()
     con1 = st.container(border=True)
+    # Daten filtern
     cycle, zelle = daten_filter(con1, alldata)
     all_soc = DB.get_all_eis_soc()
     soc = soc_filer(con1, all_soc)
@@ -37,6 +40,7 @@ def points_app():
         data = pd.DataFrame()
         for z in zelle:
             for c in cycle:
+                # Daten abrufen
                 file = DB.get_file(c, z, "EIS")
                 if file.empty:
                     continue
@@ -79,6 +83,7 @@ def points_app():
                 gruppe_clean = pd.concat([erster, gefiltert])
                 gruppen.append(gruppe_clean)
             data = pd.concat(gruppen, ignore_index=True)
+        # Parameter der Plots einstellen
         if not graphs:
             if selected == "SoC":
                 plots = soc
@@ -120,8 +125,11 @@ def points_app():
 
 def niqhist_app():
     st.title("EIS")
+
+    # Object der Klasse Datenbank erstellen und Filenamen abrufen
     DB = Database("EIS")
     alldata = DB.get_all_eis()
+    # Auswahl der Filter
     con1 = st.container(border=True)
     cycle, zelle = daten_filter(con1, alldata)
     all_soc = DB.get_all_eis_soc()
@@ -134,8 +142,12 @@ def niqhist_app():
         con1 = st.container(border=False)
         data = pd.DataFrame()
         data_list = []
+        # Für jede Zelle, Zyklus, SOC werden die Filter angewendet
+        # data_list, um nachträglich Impedanzmerkmale zu berechnen
+        # filt_data für die Darstellung von Niqhist und Bode-Kurven
         for z in zelle:
             for c in cycle:
+                # Daten abrufen
                 file = DB.get_file(c, z, "EIS")
                 if file.empty:
                     continue
@@ -151,6 +163,7 @@ def niqhist_app():
 
         con1.subheader("Ausgewählte Daten:")
         con1.write(filt_data.drop_duplicates())
+        # Button zum berechnen nachträglicher Impedanzmerkmale
         if con1.button("Daten Aktualisieren", type="secondary", use_container_width=True,
                        help="Führt die Niqhist-Analyse ein weiteres mal durch um neue Datenpunkte hinzuzufügen"):
             DA = Analyse()
@@ -160,14 +173,16 @@ def niqhist_app():
         key = 0
         col1, col2 = con1.columns(2)
 
-        kHz = col2.toggle("2kHz anzeigen")
-        tabels = col2.toggle("Tabellen anzeigen")
-        graphs = col2.toggle("Alle Grafen in einem Plot")
+        kHz = col2.toggle("2kHz anzeigen")              #Toggle, um fehlerhafte Werte bei 2kHz ein/auszublenden
+        tabels = col2.toggle("Tabellen anzeigen")           #Toggle, um Tabellen anzuzeigen
+        graphs = col2.toggle("Alle Grafen in einem Plot")   #Toggle, um nur einen Plot anzeigen zu lassen
+        # Auswählen welche Daten in einem Plot anggezeigt werden
         options = ["soc", "cycle","zelle"]
         big_plot = col1.segmented_control("Daten", options,
                                           help="Wähle Wert der einzelnen Diagramme",
                                           default=options[2],
                                           disabled=graphs)
+        # Auswählen des Diagramm-Typs
         options = ["Niqhist", "Bode-Re", "Bode-Im", "Bode-Phase","Bode-Z"]
         plot = col1.segmented_control("Plots",options,default=options[0])
         if plot == "Niqhist":
@@ -209,6 +224,7 @@ def niqhist_app():
 
         subplots = 'color'
 
+        # Plots erstellen und anzeigen
         for p in plots:
             con2 = st.container(border=False)
             con2.divider()
@@ -216,24 +232,30 @@ def niqhist_app():
                 data_mod = data[data[plot_name] == p]
                 if data_mod.empty:
                     continue
+            # Anzeigename für einzelne Graphen
             data_mod['color'] = data_mod['zelle'].astype(str) + "_" + data_mod['cycle'].astype(str) + "_" + data_mod['soc'].astype(str)
             data_mod.sort_values(by=["datei","freqhz"], inplace=True)
 
             if not kHz:
                 data_mod = data_mod[data_mod["freqhz"] != 1999]
             name = f"Niqhist plot von {p}"
+            # Aufruf der Plot-Funktion
             fig = plot_graphs(data_mod, name,subplots,x_data,y_data, log_x)
+            # Plot Anzeigen
             con2.plotly_chart(fig)
             space, col2 = con2.columns([4, 1])
             key += 1
             if tabels:
+                # Datentabelle-Anzeigen
                 con2.dataframe(data_mod)
+
 
 def form_app():
     st.title("Formierungs Analyse")
+    # Object der Klasse Datenbank erstellen
     DB = Database("form")
+    # Eis Messergebnisse abrufen (volles Spektrum)
     eis = DB.get_all_eis_data()
-
     eis = eis.rename(columns={
         "calc_rezohm": "re",
         "calc_imzohm": "im",
@@ -241,39 +263,34 @@ def form_app():
         "zohm": "betrag"
     })
     eis["freqhz"] = eis["freqhz"].round(2)
+    # Daten umformen
     df_eis = eis.melt(
         id_vars=["freqhz", "soc", "zelle", "cycle"],
         value_vars=["re", "im", "phase", "betrag"],
         var_name="parameter",
         value_name="wert"
     )
-
+    # Eis Messergebnisse abrufen (nur Merkmale)
     points = DB.get_all_eis_points()
-    wert_spalten = ['im_max', 're_min', 're_max', 'im_min', 'phase_max', 'phase_min', 'im_zif', 'phase_zif', 'mpd',
-                    'phase_184','phase_400','im_631', 'im_63','im_400','im_184','re_184', 're_400']
     df_points = points.melt(
         id_vars=['soc', 'zelle', 'cycle'],  # diese bleiben unverändert
-        #value_vars=wert_spalten,  # diese Spalten werden umgeformt
         var_name='parameter',  # neue Spalte für den Parameternamen
         value_name='wert'  # neue Spalte für den Wert
     )
     df_match_eis = df_eis.drop(columns=["freqhz"])
     df_match_eis['parameter'] = df_eis['parameter'] + '_' + df_eis['freqhz'].astype(str)
-    exclude = ['phase_200','phase_400','im_631', 'im_63','im_400','im_200','re_200', 're_400']
-    df_match_points = df_points[~df_points['parameter'].isin(exclude)]
-    df_all = pd.concat([df_match_points, df_match_eis])
-
+    # Funktionen zur Analyse definieren
     agg_funcs = {
         'wert': ['mean', 'std', 'median', 'min', 'max', max_dev_to_median]
     }
 
+    # Auswahl der darstellung
     ops = ['overall_freq','std_soc_freq','tab_zelle','plot_para_zelle','div_soc_cycle']
     sel1 = st.segmented_control("Plots wählen", options=ops, default=ops[0])
-    df_match_points = df_match_points.dropna()
     if sel1 == 'overall_freq':
         plot_freq_overall(df_eis, agg_funcs)
     elif sel1 == 'std_soc_freq':
-        plot_soc_freq(df_eis, agg_funcs)
+        plot_soc_std_freq(df_eis, agg_funcs)
     elif sel1 == 'tab_zelle':
         plot_tab_zelle(df_points)
     elif sel1 == 'plot_para_zelle':
@@ -283,9 +300,8 @@ def form_app():
     else:
         plot_tab_overall(df_points,df_match_eis,agg_funcs)
 
-        #y: Abweichung, x: soc, plots für bestimte frequenzen z.B. phase 400hz
-
 def plot_points(data, name,x_values, y_values, subplots):
+    # Funktion die Diagramme von Impedanzmerkmale erstellt
     fig = px.line(data,
                   x=x_values,
                   y=y_values,
@@ -302,11 +318,12 @@ def plot_points(data, name,x_values, y_values, subplots):
     return fig
 
 def plot_graphs(data, name, subplots, x, y, log):
+    # Funktion die Diagramme für Impedanzspektren erstellt
     fig = px.line(data,
                   x=x,
                   y=y,
                   color=subplots,
-                  log_x = True,
+                  log_x = log,
                   title=name,
                   markers=True,
                   color_discrete_sequence=list(colors.values()),
@@ -316,6 +333,7 @@ def plot_graphs(data, name, subplots, x, y, log):
     return fig
 
 def plot_freq_overall(df_long,agg_funcs):
+    # Seite die Spektum über frequenz für alle Zellen anzeigt
     # Gruppieren nach Frequenz und Parameter (soc und cycle fallen weg)
     df_eis = df_long.groupby(['freqhz', 'parameter']).agg(
         mittelwert=('wert', 'mean'),
@@ -342,18 +360,20 @@ def plot_freq_overall(df_long,agg_funcs):
     st.plotly_chart(fig)
     st.write(df_eis)
 
-def plot_soc_freq(df_long,agg_funcs):
+def plot_soc_std_freq(df_long,agg_funcs):
+    # Seite die Standartaweichung über frequenz Anzeigt
     freq = df_long['zelle'].unique()
+    #Auswahl der Zellen
     sel2 = st.segmented_control("Zelle wählen",options=freq)
+    # Auswahl der y-Achse
     opt = ['re', 'im','phase','betrag']
     sel3 = st.segmented_control("Wert auswählen", options=opt, default=opt[0])
     if sel2:
         df_para = df_long[df_long['parameter'] == sel3]
         df_freq= df_para[df_para['zelle'] == sel2]
+        #Zyklen Filtern
         cycle = [0, 5,15,30,50]
-        #soc = [500,1250,2000]
         df_sorted = df_freq[df_freq['cycle'].isin(cycle)]
-        #df_sorted = df_freq[df_freq['soc'].isin(soc)]
         df_sorted = df_sorted.sort_values("soc")
         st.write(df_sorted)
         fig = px.box(df_sorted,
@@ -372,6 +392,7 @@ def plot_soc_freq(df_long,agg_funcs):
             min=('wert', 'min'),
             max=('wert', 'max')
         ).reset_index()
+        # Auswahl der y-Achse der Zweite Grafik
         opt2 = ['mittelwert','std','median','min','max']
         sel4 = st.segmented_control("Wert auswählen", options=opt2, default=opt2[0])
         fig = px.line(df_eis,
@@ -384,6 +405,7 @@ def plot_soc_freq(df_long,agg_funcs):
         st.plotly_chart(fig)
         st.write(df_eis)
         st.subheader("Differenz der Werte")
+        # Abweichung in Zahlen an den Festen frequenzen
         if sel3 == 're':
             st.write("bei 5,4Hz")
             data = df_eis[df_eis['freqhz'].between(5, 6)]
@@ -428,6 +450,8 @@ def plot_soc_freq(df_long,agg_funcs):
             st.write(pd.concat([res1,res2]))
 
 def plot_tab_overall(df_long,df_eis,agg_funcs):
+    # Abweichung der Merkmale über alle Zellen und SOC gemittelt
+    # Default Darstellung
     df_overall = df_eis.groupby(['parameter']).agg(agg_funcs)
     df_overall.columns = ['mittelwert', 'std', 'median', 'min', 'max', 'max_abw_median']
     df_overall = df_overall.reset_index()
@@ -455,15 +479,11 @@ def plot_tab_overall(df_long,df_eis,agg_funcs):
     st.write(df_combined)
 
 def plot_tab_zelle(df_all):
+    # Entwicklung der Parameter einzelner Zellen
     zellen_dict = {zelle: df for zelle, df in df_all.groupby('zelle')}
     all_df = pd.DataFrame()
     con1 = st.container()
     initaldf = df_all[df_all['cycle']==0]
-    inital = (
-        initaldf
-        .groupby(['soc', 'parameter'], as_index=False)['wert']
-        .mean()
-    )
     for zelle in zellen_dict:
         con1.subheader(zelle)
         zelle_df = zellen_dict[zelle]
@@ -487,6 +507,7 @@ def plot_tab_zelle(df_all):
             gruppe_clean = gruppe_clean.assign(korrekturen=anzahl_entfernt)
             gruppen.append(gruppe_clean)
         zelle_df = pd.concat(gruppen, ignore_index=True)
+        # Parameter für jeden soc und Parameter berechnen
         gruppen = [df for _, df in zelle_df.groupby(['soc', 'parameter'])]
         result1 = pd.DataFrame([{
             "soc": gruppe["soc"].iloc[0],
@@ -499,6 +520,7 @@ def plot_tab_zelle(df_all):
             "bis_median_0.01": robust_start_end_abw(gruppe,0.01)
         } for gruppe in gruppen])
         gruppen = [df for _, df in result1.groupby('parameter')]
+        # Werte einzelner SOCs filtern
         result2 = pd.DataFrame([{
             "zelle": zelle,
             "parameter": gruppe["parameter"].iloc[0],
@@ -515,9 +537,7 @@ def plot_tab_zelle(df_all):
             "gesamt_bis_median_0.05_80SOC": gruppe[gruppe["soc"] == 2000]["bis_median_0.05"].values[0] if not gruppe[gruppe["soc"] == 2000].empty else None,
             "gesamt_bis_median_0.01_80SOC": gruppe[gruppe["soc"] == 2000]["bis_median_0.01"].values[0] if not gruppe[gruppe["soc"] == 2000].empty else None,
         } for gruppe in gruppen])
-        #mask = ~result2["parameter"].str.contains("phase", case=False, na=False)
-        #result2.loc[mask, soc] = result2.loc[mask, soc].apply(lambda x: x * 1000)
-        #result2[soc] = result2[soc].apply(lambda x: float(f"{x:.3g}"))
+
         con1.write(result2)
         latex_table = result2.to_latex(index=False, escape=False, decimal=",")
         con1.download_button(
@@ -528,8 +548,10 @@ def plot_tab_zelle(df_all):
         )
         all_df = pd.concat([all_df, result2])
 
+    # Zeigen einer Zusammenfassung
     st.subheader("Zusammenfassung")
     soc = st.segmented_control("SOC_wählen",["div_20","div_50","div_80"],default="div_50")
+    # Daten umformen
     wide = all_df.pivot_table(
         index='parameter',
         columns='zelle',
@@ -553,6 +575,8 @@ def plot_tab_zelle(df_all):
     )
 
 def plot_para_zelle(df_all):
+    # Entwicklung der Parameter aller Zellen (SOC auswählbar)
+    # Darstellung von ABsolutwerten, Normierten Werten oder Änderungen
     gruppen = []
     # Filtert Extremwerte raus
     df_all = df_all.sort_values(by=['cycle'])
@@ -585,6 +609,7 @@ def plot_para_zelle(df_all):
         plot_df = data_df[data_df['parameter'] == para]
         gruppen = [df for _, df in plot_df.groupby('zelle')]
         norm_df = pd.DataFrame()
+        # alternative y-Werte berechnen
         for gruppe in gruppen:
             first = gruppe.iloc[0]['wert']
             gruppe['wert_norm'] = gruppe['wert'] / first
@@ -600,6 +625,7 @@ def plot_para_zelle(df_all):
         st.plotly_chart(fig)
 
 def div_soc_cycle(df_all):
+    # Entwicklung der Parameter bestimmter Zellen füür unterschiedliche SOC
     gruppen = []
     # Filtert Extremwerte raus
     df_all = df_all.sort_values(by=['cycle'])
@@ -617,6 +643,7 @@ def div_soc_cycle(df_all):
         plot_df = data_df[data_df['parameter'] == para]
         gruppen = [df for _, df in plot_df.groupby('soc')]
         norm_df = pd.DataFrame()
+        # alternative y-Werte berechnen
         for gruppe in gruppen:
             first = gruppe.iloc[0]['wert']
             gruppe['wert_norm'] = gruppe['wert'] / first
