@@ -24,12 +24,16 @@ def lup_app():
         fit_app()
 
 def table_app():
+    # Zeigt Look-Up-Tabelle an
     st.title("Creat Look-Up-Table")
+    # Objekt der Klasse DAtanbank erstellem
     DB = Database("lup")
+    # Daten abrufen
     df = DB.get_lup()
     df['calc_soc'] = df['soc']/2500 + 0.1
     plots = ['phasezdeg', 'calc_rezohm', 'calc_imzohm']
 
+    # Daten Filtern
     data_df = df[df["calc_ima"]==1250]
     data_df = data_df[data_df["freqhz"].between(195, 205)]
     data_df["temperaturec_cat"] = data_df["temperaturec"].astype(str)
@@ -52,10 +56,14 @@ def table_app():
     st.write(show_data)
 
 def deis_form_app():
+    # Zeigt Formierung der DEIS-Werte an
     st.title("Formierungs Data")
+    #Erstellt Objekt der Klasse ADtenbank
     DB = Database("lup")
+    # Daten Abrufen
     df = DB.get_deis()
     df['calc_soc'] = df['soc']/2500
+    #theo_cycle erstellen
     df['theo_cycle'] = np.select(
         [
             df['zelle'].isin(['JT_VTC_003', 'JT_VTC_006', 'JT_VTC_010']),
@@ -71,11 +79,13 @@ def deis_form_app():
     df = df.sort_values(["zelle","soc","calc_ima","cycle"])
 
     st.write(df)
-    data_df = df[df[("zelle")]==('JT_VTC_008')]
-    data_df = data_df[data_df["calc_ima"]==1250]
-    data_df = data_df.sort_values(["soc","cycle"])
     dia = st.segmented_control('Diagramme', ['SOC', 'Zyklen', 'Zyklen-mittel'])
     if dia == 'SOC':
+        # Entwicklung der Parameter über SOC
+        # Daten weiter filtern
+        data_df = df[df[("zelle")] == ('JT_VTC_008')]
+        data_df = data_df[data_df["calc_ima"] == 1250]
+        data_df = data_df.sort_values(["soc", "cycle"])
         for plot in plots:
             st.subheader(plot + ' 200 Hz')
             fig = px.line(data_df,
@@ -85,6 +95,8 @@ def deis_form_app():
                             )
             st.plotly_chart(fig)
     elif dia == 'Zyklen':
+        #Entwicklung der Parameter einzelner Zellen
+        # Diese Seite muss vor der Fit Seite geöffnet werden
         socs = [0.2,0.5,0.8]
         data_df = df[df["calc_ima"]==2500]
         soc = st.segmented_control("SOC wählen", socs, default=socs[0])
@@ -92,6 +104,7 @@ def deis_form_app():
         x_val = 'cycle' if not x_tog else 'theo_cycle'
         data_df = data_df[data_df["calc_soc"]== soc]
         data_df = data_df.sort_values(["zelle","soc","cycle"])
+        # Initialer Mittelwert der Zellen
         inital = data_df[data_df["cycle"]==0]
         inital_mean = pd.DataFrame([{
             "phasezdeg": inital["phasezdeg"].mean(),
@@ -109,6 +122,7 @@ def deis_form_app():
                             )
             st.plotly_chart(fig)
             gruppen = [daf for _, daf in data_df.groupby(['soc','zelle'])]
+            # Wenn initialwert Fehlt, Mittelwert der Anderen Zellen verwenden
             result1 = pd.DataFrame([{
                 "soc": gruppe["soc"].iloc[0],
                 "zelle": gruppe["zelle"].iloc[0],
@@ -161,6 +175,8 @@ def deis_form_app():
                 }
             )
         } for gruppe in gruppen])
+
+        #Darstellung der Abweichungen pro Zelle
         st.subheader("Abweichung Zellen")
         dat2 = result2[result2["ima"] == 2500]
         dat2 = dat2[dat2["soc"] == 1250]
@@ -175,6 +191,7 @@ def deis_form_app():
             mime="text/plain"
         )
 
+        #Darstellung der Gemittelten werte fpr unterschiedliche C-Raten während der Messung
         gruppen = [daf for _, daf in result2.groupby(['soc', 'ima'])]
         result3 = pd.DataFrame([{
             "ima": gruppe["ima"].iloc[0],
@@ -195,8 +212,10 @@ def deis_form_app():
             file_name=f"Form_DEIS.tex",
             mime="text/plain"
         )
+        #Abweichungen in der Session speichern für Exponentielle Fits
         st.session_state["Abweichung"] = result3
     elif dia == 'Zyklen-mittel':
+        #Streung der Zellen bei 3 SOCs über Zyklen
         data_df = df[df["cycle"] <= 50]
         socs = [0.2,0.5,0.8]
         data_df = data_df.sort_values(["zelle", "soc", "cycle"])
@@ -230,7 +249,10 @@ def deis_form_app():
 
 
 def fit_app():
+    # App um exponentielle Fits zu erstellen und Abweichungen in Grad zu berechnen
+    # Formierung-App muss forher geöffnet werden
     st.title("Fit Data")
+    # Daten abrugen
     DB = Database("lup")
     df = DB.get_lup()
     df['calc_soc'] = round(df['soc']/ 2500 + 0.1,2)
