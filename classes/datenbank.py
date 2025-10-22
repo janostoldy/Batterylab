@@ -10,15 +10,6 @@ class Database:
         self.name = db_name
 
     def df_in_DB_alt(self, df, table_name):
-        """
-        Fügt einen DataFrame in die angegebene Tabelle der Datenbank ein (mit UPSERT-Logik für MySQL).
-
-        - Prüft, ob die Spalten des DataFrames mit denen der Tabelle übereinstimmen.
-        - Erwartet eine Spalte 'hash' als eindeutigen Schlüssel.
-        - Nutzt Batch-Insert für Effizienz.
-        - Bei Konflikt (gleicher 'hash') werden die Werte aktualisiert.
-        """
-
         # Hol Spaltennamen aus der Datenbank (als Liste)
         conn = st.connection("sql", type="sql")
         result = conn.query(
@@ -56,6 +47,7 @@ class Database:
             s.commit()
 
     def df_in_DB(self, df, table_name):
+        # Überarbeitet funktion zum einfügen von Dataframes
         url = st.secrets["url"]["url"]
         engine = create_engine(url)
 
@@ -121,15 +113,12 @@ class Database:
 
     @st.cache_data(ttl=0)
     def get_all_files(_self):
+        # Gibt alle eingelesenen Dateien zurück
         conn = st.connection("sql", type="sql")
         return conn.query("SELECT * FROM files", ttl=0)
 
-    def get_all_eingang(self):
-        conn = st.connection("sql", type="sql")
-        sql = "SELECT * FROM files WHERE files.typ!='Ageing'"
-        return conn.query(sql)
-
     def get_file(self, cycle, zelle, typ):
+        # Liefert Dateien eines bestimmten Typs zurück
         conn = st.connection("sql", type="sql")
         if typ == "*":
             sql = "SELECT * FROM files WHERE files.cycle=:cycle AND files.zelle=:zelle"
@@ -142,16 +131,19 @@ class Database:
             return pd.DataFrame(file)
 
     def get_file_typs(self):
+        # Liefert alle Dateitypen die in der Datenbank sind
         conn = st.connection("sql", type="sql")
         sql = f"""SELECT DISTINCT typ FROM files """
         return conn.query(sql)
 
     @st.cache_data(ttl=0)
     def get_all_zells(_self):
+        # Gibt alle Zellen zurück ohne gecachte Daten zu verwenden
         conn = st.connection("sql", type="sql")
         return conn.query("SELECT * FROM zellen")
 
     def update_zelle(self, Zelle, cycle):
+        # Zyklus einer Zelle updaten
         conn = st.connection("sql", type="sql")
         sql = "UPDATE zellen SET cycle = :cycle WHERE id = :zelle"
         params = {"cycle": cycle, "zelle": Zelle}
@@ -160,16 +152,19 @@ class Database:
             s.commit()
 
     def get_kapa_cycles(self):
+        # Zyklen der Kappatzitätsanalysen
         conn = st.connection("sql", type="sql")
         return conn.query("SELECT DISTINCT cycle FROM files WHERE typ='Kapa'")
 
     def get_zell_cycle(self, zelle, Max=True):
+        # Liefert Zyklen einer Zelle
         conn = st.connection("sql", type="sql")
         sql = "SELECT cycle FROM zellen WHERE id = :zelle"
         params = {"zelle": zelle}
         return conn.query(sql, params=params)
 
     def get_cap_cycle(self, zelle):
+        #  Liefert "theoretischen" Zyklen einer Zelle
         conn = st.connection("sql", type="sql")
         sql = "SELECT cap_p_cyc FROM zellen WHERE id = :zelle"
         params = {"zelle": zelle}
@@ -189,10 +184,12 @@ class Database:
             s.commit()
 
     def get_all_kapa(self):
+        # Gibt Kapazitätsdateien zurück
         conn = st.connection("sql", type="sql")
         sql = "SELECT * FROM files WHERE typ = 'Kapa'"
         return conn.query(sql)
     def get_kapa(self, Datei):
+        # Gibt Kapazitätsdaten zurück
         conn = st.connection("sql", type="sql")
         sql = """SELECT kapa.datei, kapa.kapa, kapa.info, files.datum, files.cycle, files.zelle, files.cap_cycle
                      FROM kapa INNER JOIN files ON kapa.datei=files.name
@@ -202,22 +199,13 @@ class Database:
            result = s.execute(text(sql), params).fetchall()
         return result
 
-    def get_initial_kapa(self, zelle):
-        conn = st.connection("sql", type="sql")
-        sql = """SELECT inital_kapa
-            FROM zellen
-            WHERE id = :zelle
-        """
-        params = {"zelle": zelle}
-        with conn.session as s:
-            result = s.execute(text(sql), params=params).fetchall()
-        return result
-
     def get_all_dva(self):
+        # Gibt DVA-Dateien zurück
         conn = st.connection("sql", type="sql")
         sql = "SELECT * FROM files WHERE typ = 'DVA'"
         return conn.query(sql)
     def get_dva(self, Datei):
+        # Gibt DVA-Daten zurück
         conn = st.connection("sql", type="sql")
         sql1 = "SELECT * FROM dva WHERE datei = :datei"
         sql2 = "SELECT * FROM dva_points WHERE datei = :datei"
@@ -228,6 +216,7 @@ class Database:
         return data, points
 
     def get_all_eis_data(self):
+        # Liefert alle EIS-Daten unter bestimmten bedingungen zurück
         conn = st.connection("sql", type="sql")
         sql = """SELECT eis.freqhz, eis.zohm, eis.phasezdeg, eis.calc_rezohm, eis.calc_imzohm, eis.soc, files.zelle, files.cycle
                  FROM eis INNER JOIN files ON eis.datei = files.name
@@ -236,6 +225,7 @@ class Database:
         return conn.query(sql)
 
     def get_all_eis_points(self):
+        # Liefert alle relevanten Impedanzmerkmale
         conn = st.connection("sql", type="sql")
         sql = """SELECT eis_points.im_min, eis_points.im_max, eis_points.re_min, eis_points.re_max, eis_points.phase_max, eis_points.phase_min,
                         eis_points.re_zif, eis_points.mpd, eis_points.d_zi_max_re, eis_points.d_zi_min_re,
@@ -248,14 +238,17 @@ class Database:
         return conn.query(sql)
 
     def get_all_eis(self):
+        # Liefert alle EIS-Dateien
         conn = st.connection("sql", type="sql")
         sql = "SELECT * FROM files WHERE typ = 'EIS'"
         return conn.query(sql)
     def get_all_eis_soc(self):
+        # Liefer SOC werte der EIS-MEssungen
         conn = st.connection("sql", type="sql")
         sql = ("SELECT DISTINCT soc FROM eis_points ")
         return conn.query(sql)
     def get_eis_points(self, Datei, soc):
+        # Liefert Impedanzmerkmale einer bestimmten Datei zu einem bestimmten SOC
         conn = st.connection("sql", type="sql")
         sql = """SELECT eis_points.*, files.datum, files.cycle, files.zelle, files.cap_cycle
                       FROM eis_points INNER JOIN files ON eis_points.datei=files.name 
@@ -265,6 +258,7 @@ class Database:
             result = s.execute(text(sql), params).fetchall()
         return result
     def get_eis_plots(self, Datei, soc):
+        # Liefert Impedanzkurve einer bestimmten Datei zu einem bestimmten SOC
         conn = st.connection("sql", type="sql")
         sql = """SELECT eis.*, files.datum, files.cycle, files.zelle, files.cap_cycle
                       FROM eis INNER JOIN files ON eis.datei = files.name
@@ -274,6 +268,7 @@ class Database:
             result = s.execute(text(sql), params).fetchall()
         return result
     def get_lup(self):
+        # Gibt alle Look-Up-Werte zurück
         conn = st.connection("sql", type="sql")
         sql = """SELECT *
                  FROM eis
@@ -281,6 +276,7 @@ class Database:
         return conn.query(sql)
 
     def get_deis(self):
+        # Gibt alle DEIS-Werte zurück
         conn = st.connection("sql", type="sql")
         sql = """SELECT eis.soc, eis.freqhz, eis.calc_ima, eis.calc_rezohm, eis.calc_imzohm, eis.zohm, eis.phasezdeg,
                 eis.temperaturec, files.cycle, files.zelle
@@ -289,6 +285,7 @@ class Database:
         return conn.query(sql)
 
     def get_imp_bio(self):
+        # Liefert Impedanz von Biologic bei 0.25C für ecd
         conn = st.connection("sql", type="sql")
         sql = """SELECT * 
                  FROM imp 
@@ -296,12 +293,15 @@ class Database:
         return conn.query(sql)
 
     def get_imp_files(self):
+        # Liefert alle Dateien für den Vergleich von Biologic und Safion
         conn = st.connection("sql", type="sql")
         sql = """SELECT * 
                  FROM files 
                  where typ = 'imp'"""
         return conn.query(sql)
+
     def get_imp_rate(self,Datei):
+        # Liefert C-Raten des Impedanzvergleichs
         conn = st.connection("sql", type="sql")
         sql = """SELECT DISTINCT c_rate FROM imp 
                  WHERE datei = :datei
@@ -311,6 +311,7 @@ class Database:
             result = s.execute(text(sql), params).fetchall()
         return result
     def get_impedanz(self, Datei, c_rate):
+        # Liefert Daten für den Vergleich von Biologic und Safion für eine bestimmte C-Rate
         conn = st.connection("sql", type="sql")
         sql = """SELECT * FROM imp WHERE datei = :datei AND ROUND(c_rate, 2) = :c_rate"""
         params = {"datei": Datei, "c_rate": c_rate}
@@ -319,33 +320,25 @@ class Database:
         return result
 
     def get_impedanz_basy(self):
+        # Gibt die Impedanz des Safions zurück
         conn = st.connection("sql", type="sql")
         sql = """SELECT * FROM imp WHERE typ = 'Basytec'"""
         return conn.query(sql)
 
     def get_impedanz_bio(self):
+        # Gibt die Impedanz von Biologic zurück
         conn = st.connection("sql", type="sql")
         sql = """SELECT * FROM imp WHERE typ = 'Biologic'"""
         return conn.query(sql)
 
     def get_basytec(self):
+        # Liefert gespeicherte Safion Daten für einen direkten Vergleich mit Biologic
         conn = st.connection("sql", type="sql")
         sql = """SELECT * FROM basytec"""
         return conn.query(sql)
 
-    def update_files(self, zelle):
-        conn = st.connection("sql", type="sql")
-        sql = "SELECT cap_p_cyc FROM zellen WHERE id = :zelle"
-        params = {"zelle": zelle}
-        cap = conn.query(sql, params=params)
-
-    def get_form(self):
-        conn = st.connection("sql", type="sql")
-        sql = """SELECT * FROM form"""
-        return conn.query(sql)
-
-
     def check_con(self):
+        # Verbindung zur Datenbank testen
         conn = st.connection("sql", type="sql")
         start = time.time()
         with conn.session as s:
