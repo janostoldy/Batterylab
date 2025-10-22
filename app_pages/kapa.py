@@ -8,8 +8,11 @@ from classes.datenbank import Database
 
 def kapazitaet_app():
     st.title("Kapazität")
+    # Object der Klasse Datenbank erstellen
     DB = Database("Kapazitaet")
+    # Filenamen abrufen
     alldata = DB.get_all_kapa()
+    #Daten filtern
     con0 = st.container(border=True)
     cycle, zelle = daten_filter(con0, alldata)
     filt_data = pd.DataFrame()
@@ -20,6 +23,7 @@ def kapazitaet_app():
         data = pd.DataFrame()
         for d in alldata.itertuples(index=False):
             if d.cycle in cycle and d.zelle in zelle:
+                #Ergebnisse abrufen
                 kap = DB.get_kapa(d.name)
                 kap = pd.DataFrame(kap)
                 filt_data = pd.concat([filt_data, kap])
@@ -52,39 +56,21 @@ def kapazitaet_app():
             einheit = "mAh"
         plot_x = con1.segmented_control("X-Achse",["cycle", "cap_cycle"],default="cycle")
 
-
-        key = 0
         for p in plots:
             con2 = st.container(border=False)
             con2.divider()
             if not selected:
                 data_mod = data[data[plot_name] == p]
             name = f"Kapazität von {plot_name} {p} in {einheit}"
+            # PLot erstellen und anzeigen
             fig = plot_kapa(data_mod, name,subplots,plot_x,plot_y)
             con2.plotly_chart(fig)
-            fig.update_layout(
-                template="plotly",  # <- wichtig!
-                paper_bgcolor='white',
-                plot_bgcolor='white',
-                font_color='black',
-                legend_title_font_color='black',
-                xaxis=dict(
-                    showgrid=True,
-                    gridcolor='#e0e0e0',  # Farbe des Grids
-                    gridwidth=1  # Dicke der Linien
-                ),
-                yaxis=dict(
-                    showgrid=True,
-                    gridcolor='#e0e0e0',
-                    gridwidth=1
-                )
-            )
-            key += 1
-
+            # Daten anzeigen
             con2.dataframe(data_mod)
 
 
 def plot_kapa(data,name,subplots,x,y):
+    # Erstellt Kapazitätsplot
     data = data.sort_values(by=x)
     fig = px.line(data,
                   x=x,
