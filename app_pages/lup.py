@@ -5,7 +5,7 @@ import numpy as np
 
 from classes.datenbank import Database
 import plotly.graph_objects as go
-from scipy.optimize import root, curve_fit
+from scipy.optimize import curve_fit
 
 from src.auswertung import robust_start_end_median, robust_start_end_theo_median
 
@@ -281,6 +281,7 @@ def fit_app():
     ima = st.segmented_control('Stom wählen', unique_ima, default=unique_ima[0])
     con1 = st.container()
     col1, coln2, soc2 = con1.columns(3)
+    # Abweichungen aus Sessionstate holen
     if "Abweichung" in st.session_state:
         state = st.session_state["Abweichung"]
         state = state[state["ima"]==ima]
@@ -289,7 +290,10 @@ def fit_app():
         abw_8 =  state[state['soc'] == 2000][pl1].values[0] if not state[state['soc'] == 500].empty else 0
     else:
         st.error("Abweichung nicht gefund! --> Erst Seite Formierung öffnen")
-        st.stop()
+        abw_2 = 0
+        abw_5 = 0
+        abw_8 = 0
+    # Zahleninputs  und container für Ergebnisse erstellen
     col1.write("Delta 0.2 SOC")
     div_2 = coln2.number_input("0.2",label_visibility="collapsed",value=abw_2)
     col1, coln2, soc5 = con1.columns(3)
@@ -300,9 +304,19 @@ def fit_app():
     div_8 = coln2.number_input("0.8",label_visibility="collapsed",value=abw_8)
     col1, colmean = con1.columns([1,3])
     col1.write("Abweichung ohne SOC-Input")
+    # Figure erstellen, damit später plots eingwfügt werden können
     fig = go.Figure()
     fits = pd.DataFrame()
     socs = [0.2, 0.5, 0.8,'mean']
+
+    # Exponentialfunkion definieren
+    def func(x, a, b, c):
+        return a * np.exp(b * x) + c
+
+    # Inverse Funkton definieren
+    def inv_x(y, a, b, c):
+        return (1 / b) * np.log((y - c) / a)
+
     for soc in socs:
         if soc == 'mean':
             x = mean['temperaturec']
@@ -312,13 +326,14 @@ def fit_app():
             dat = dat[dat["calc_ima"] == ima]
             x =  dat['temperaturec']
             y =  dat[pl]
-        def func(x, a, b,c):
-            return a * np.exp( b * x) + c
 
+        # Kurve fitten
         params, _ = curve_fit(func, x, y,p0=(100, -0.1, 3), maxfev=10000)
         a, b,c = params
+        # x und y-Werte der Fits berechnen
         x_fit = np.linspace(min(x), max(x), 100)
         y_fit = func(x_fit, a, b,c)
+        # Plots in Grafik einfügen
         fig.add_trace(go.Scatter(
             x=x,
             y=y,
@@ -338,9 +353,9 @@ def fit_app():
             'parameter': pl}
         )
         fits = pd.concat([fits, fit])
-        def inv_x(y, a, b, c):
-            return (1 / b) * np.log((y - c) / a)
+
         inital = inv_x(y_fit[0], a, b,c)
+        # Ergebnisse in Richtigen Container eintragen
         match soc:
             case 0.2:
                 wert = inital - inv_x((1+div_2) * y_fit[0], a, b,c)
