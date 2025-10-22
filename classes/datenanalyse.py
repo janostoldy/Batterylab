@@ -34,6 +34,7 @@ class Analyse:
 
 
     def add_relax(self, file_path, cycle, Zelle, save_data):
+        # Fügt nur die Datei hinzu keine Daten
         #try:
             for data_path in file_path:
                 data_name = os.path.basename(data_path)
@@ -43,6 +44,7 @@ class Analyse:
          #   raise Exception(f"Fehler bei Relaxation -> {e}")
 
     def analyze_Aeging(self, file_path, cycle, Zelle, save_data, bar):
+        # Macht EIS-Analyse wenn EIS daten enthalten, erhöht sonst die Zyklenzahl der Zelle
         try:
             n_files = len(file_path)
             for i, data_path in enumerate(file_path):
@@ -64,8 +66,10 @@ class Analyse:
             raise Exception(f"Fehler bei Ageing-Analyse -> {e}")
 
     def calc_niquist_data(self, eis_data,save_data):
+        # Berechnet Impedanzmerkmale
         results = []
 
+        #Notwendig da Frequenzen nicht immer exakt gemessen werden
         def nearest(series, value):
             array = np.array(series)
             idx = (np.abs(array - value)).argmin()            # Index des nächstgelegenen Werts
@@ -136,6 +140,7 @@ class Analyse:
             self.DB.df_in_DB(df=niquist_df, table_name='eis_points')
 
     def analyze_EIS_data(self, file_path, cycle, Zelle, save_data, typ='eis'):
+        # Analysiert EIS daten
         try:
             for data_path in file_path:
                 data_name = os.path.basename(data_path)
@@ -146,7 +151,7 @@ class Analyse:
                 if 'zohm' not in df.columns:
                     raise Exception("Keine Eis-Daten")
 
-                # Eis Messung
+                # Flags für Eis Messung
                 start_eis_indices = df[((df['flags'] == 37) | (df['flags'] == 165) | (df['flags'] == 53) | (df['flags'] == 181)) & (df['freqhz'] > 0)].index
                 end_eis_indices = df[((df['flags'] == 69) | (df['flags'] == 197) | (df['flags'] == 85) | (df['flags'] == 213)) & (df['freqhz'] > 0)].index
                 if len(start_eis_indices) == 0 or len(end_eis_indices) == 0:
@@ -159,6 +164,7 @@ class Analyse:
                 eis_Calc_ImA = round(eis_ImA / 1250) * 1250
                 start_time = df.times[start_eis_indices]
 
+                # Dataframe zum einfügen erstellen
                 for i, eis in enumerate(eis_values):
                     # Real und Imaginärteil berechnen
                     eis_phi = np.deg2rad(eis['phasezdeg'])
@@ -171,8 +177,10 @@ class Analyse:
                     eis.loc[:, 'datei'] = data_name
                     eis.loc[:, 'typ'] = typ
 
+                # DEIS Messungen analysieren
                 self.analyze_DEIS_data(df, data_name, cycle, Zelle, save_data)
 
+                # Impedanzmerkmale Berechnen
                 self.calc_niquist_data(eis_values, save_data)
                 if save_data:
                     self.DB.insert_file(data_name, cycle, "Eis Messung", Zelle, "EIS")
@@ -183,12 +191,16 @@ class Analyse:
             raise Exception(f"Fehler bei EIS-Analyse -> {e}")
 
     def analyze_DEIS_data(self, df, data_name, cycle, Zelle, save_data):
+        # DEIS Messungen analysieren
         try:
+            # Flags für DEIS-Messung
             deis_values = df[(df['flags'].isin([117, 101, 229, 245])) & (df['freqhz'] > 0)].copy()
             if len(deis_values) == 0:
                 raise Exception('No DEIS data found in file or wrong flags.')
             deis_indices = deis_values.index
+            #SOC berechnen
             deis_soc = round(df.qqomah[deis_indices - 1] / 125) * 125
+            #C-Rate berechnen
             deis_ImA = df.ima[deis_indices - 1]
             deis_Calc_ImA = round(deis_ImA / 1250) * 1250
 
@@ -213,6 +225,7 @@ class Analyse:
             st.warning(f"Fehler bei DEIS-Analyse -> {e}")
 
     def analyze_LUP_data(self, file_path, cycle, Zelle, save_data):
+        # Analyseren der Daten Für Look-Up-Tabelle zur Temperaturschätzung
         data_name = os.path.basename(file_path[0])
         mpr_file = BioLogic.MPRfile(file_path[0])
         df = pd.DataFrame(mpr_file.data)
@@ -221,13 +234,17 @@ class Analyse:
         if 'zohm' not in df.columns:
             raise Exception("Keine Eis-Daten")
 
+        # Flags für DEIS-Messung
         deis_values = df[(df['flags'].isin([117, 101, 229, 245])) & (df['freqhz'] > 0)].copy()
         if len(deis_values) == 0:
             raise Exception('No DEIS data found in file or wrong flags.')
         deis_indices = deis_values.index
+        # SOC berechnen
         deis_soc = round(df.qqomah[deis_indices - 1] / 125) * 125
+        # Strom berechnen
         deis_ImA = df.ima[deis_indices - 1]
         deis_Calc_ImA = round(deis_ImA / 1250) * 1250
+        # Temperaturen runden auf 5 Grad
         deis_values['temperaturec'] = round(deis_values['temperaturec'] /5) * 5
 
         #Anpassungen, um Daten zusammenzufügen
@@ -250,23 +267,20 @@ class Analyse:
             self.DB.df_in_DB(df=deis_values, table_name='eis')
 
     def analys_kapa_data(self,file_path, cycle, Zelle, save_data):
+        # Kapazitätsdaten analysieren
         try:
-            try:
-                inital = self.DB.get_initial_kapa(Zelle)
-            except:
-                inital = 0
             for data_path in file_path:
                 data_name = os.path.basename(data_path)
                 mpr_file = BioLogic.MPRfile(data_path)
                 df = pd.DataFrame(mpr_file.data)
                 kapa_raw = df.rename(columns=mes_spalten)
+                # Differenz zwischen Minimum und Maximum der Ladungsmenge der Zelle
                 kapa = max(kapa_raw['qqomah']) - min(kapa_raw['qqomah'])
 
                 data = pd.DataFrame({
                     'datei': [data_name],
                     'info': [f"Zelle {Zelle} nach Zyklus {cycle}"],
                     'kapa': [kapa],
-                    #'kapa_norm': [kapa] - inital,
                 })
 
                 if save_data:
@@ -276,6 +290,7 @@ class Analyse:
             raise Exception(f"Fehler bei Kapazitäts-Analyse -> {e}")
 
     def analys_OCV_data(self, file_path, cycle, Zelle, save_data):
+        # OCV-Daten analysieren
         try:
             for data_path in file_path:
                 data_name = os.path.basename(data_path)
@@ -326,6 +341,8 @@ class Analyse:
             raise Exception(f"Fehler bei OCV-Analyse -> {e}")
 
     def analyse_imp(self, file_path, cycle, Zelle, save_data, bar):
+        # Analyse zum vergleich von Biologic und Safion
+        # Ruft unterfunktionen analyse_imp_safion() und analyse_imp_biologic() auf
         n_files = len(file_path)
         for i, data_path in enumerate(file_path):
             data_name = os.path.basename(data_path)
@@ -336,6 +353,7 @@ class Analyse:
                 self.analyse_imp_biologic(data_path, cycle, Zelle, save_data)
 
     def analyse_imp_safion(self, data_path, cycle, Zelle, save_data):
+        # Analysiert Impedanz von Safion
         df = pd.read_csv(data_path)
         data_name = os.path.basename(data_path)
 
@@ -348,6 +366,7 @@ class Analyse:
         for idx, row in df.iterrows():
             data = pd.DataFrame()
 
+            #Metadaten extrahieren
             meta_data_in = pd.DataFrame([row[meta_columns].values], columns=meta_columns)
             meta_data['time'] = meta_data_in['Time [s]']
             meta_data['voltage'] = meta_data_in['Voltage [V]']
@@ -358,10 +377,12 @@ class Analyse:
             meta_data['datei'] = data_name
             meta_data['typ'] = ("Basytec")
 
+            # Einzelne Frequenzen zusammenfügen
             for i in range(0, len(data_columns), 4):
                 data_group = row[data_columns[i:i + 4]].values
                 data_df = pd.DataFrame(list(data_group))
                 data = pd.concat([data, data_df], axis=1, ignore_index=True)
+
             # Erstellen eines neuen DataFrames
             data = data.T
             data.columns = new_columns
@@ -373,6 +394,7 @@ class Analyse:
                 self.DB.insert_file(data_name, cycle, "Imp Untersuchung", Zelle, "imp")
 
     def analyse_imp_biologic(self, data_path, cycle,  Zelle, save_data):
+        # Analysiert Impedanz von Biologic
         data_name = os.path.basename(data_path)
         mpr_file = BioLogic.MPRfile(data_path)
         df = pd.DataFrame(mpr_file.data)
@@ -381,7 +403,7 @@ class Analyse:
         if 'zohm' not in df.columns:
             raise Exception("Keine Eis-Daten")
 
-        # Eis Messung
+        # Indexe für Eis Messung
         start_eis_indices = df[((df['flags'] == 37) | (df['flags'] == 165)) & (df['freqhz'] > 0)].index
         end_eis_indices = df[((df['flags'] == 69) | (df['flags'] == 197)) & (df['freqhz'] > 0)].index
         if len(start_eis_indices) == 0 or len(end_eis_indices) == 0:
@@ -397,6 +419,7 @@ class Analyse:
         eis_C_Rate = round(eis_ImA / 2900,2)
         start_time = df.times[start_eis_indices]
 
+        # Dataframe aufbauen
         data = pd.DataFrame()
         for i, eis in enumerate(eis_values):
             temp = pd.DataFrame()
@@ -420,6 +443,7 @@ class Analyse:
             self.DB.df_in_DB(df=data, table_name='imp')
 
     def insert_data(self, eis_values, deis_values, data_name):
+        # Allgemeine Funktion zum Einfügen von Dataframes
         for eis in eis_values:
             self.DB.df_in_DB(df=eis, table_name='eis')
         self.DB.df_in_DB(df=deis_values, table_name='eis')
