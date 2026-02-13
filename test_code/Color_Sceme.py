@@ -109,4 +109,4 @@ color = {
     'TUM:Secondary:DarkBlue:80%': '#3375a9',
     'TUM:Secondary:DarkerBlue:80%': '#335c7a',
 }
-plot_colors(color)
+plot_colors(col)
